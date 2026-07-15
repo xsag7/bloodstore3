@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
-import { Shield, Menu, X, ExternalLink, Sparkles } from 'lucide-react';
+import { Shield, Menu, X, ExternalLink, Sparkles, ShoppingCart } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { config, activeView, setActiveView } = useStore();
+  const { config, activeView, setActiveView, cart } = useStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const totalQuantity = cart.reduce((a, b) => a + b.quantity, 0);
 
   const handleNavClick = (view: 'home' | 'terms') => {
     setActiveView(view);
@@ -62,7 +63,7 @@ export const Navbar: React.FC = () => {
               {config.storeName.toUpperCase()}
             </div>
             <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--color-neon-red)', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '-2px' }}>
-              // Cyber Gamer Supremacy
+              // 
             </div>
           </div>
         </div>
@@ -109,8 +110,22 @@ export const Navbar: React.FC = () => {
           </a>
         </div>
 
-        {/* Desktop CTA */}
+        {/* Desktop CTA & Cart */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }} className="hidden md:flex">
+          <button 
+            onClick={() => setActiveView('checkout')}
+            className="btn-cyber-outline"
+            style={{ padding: '0.6rem 1.1rem', fontSize: '0.78rem', position: 'relative' }}
+          >
+            <ShoppingCart style={{ width: '16px', height: '16px', color: 'var(--color-neon-red)' }} />
+            <span>CARRINHO</span>
+            {totalQuantity > 0 && (
+              <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--color-neon-red)', color: '#ffffff', borderRadius: '50%', padding: '0.15rem 0.45rem', fontSize: '0.68rem', fontWeight: 900, boxShadow: '0 0 10px var(--color-neon-red)' }}>
+                {totalQuantity}
+              </span>
+            )}
+          </button>
+
           <a 
             href={config.globalDiscordUrl}
             target="_blank"
@@ -122,15 +137,28 @@ export const Navbar: React.FC = () => {
           </a>
         </div>
 
-        {/* Mobile Toggle Button */}
-        <button 
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden"
-          style={{ padding: '0.5rem', background: '#121218', border: '1px solid rgba(255,0,60,0.5)', color: 'var(--color-neon-red)', cursor: 'pointer', display: 'block' }}
-          aria-label="Toggle Navigation"
-        >
-          {mobileMenuOpen ? <X style={{ width: '24px', height: '24px' }} /> : <Menu style={{ width: '24px', height: '24px' }} />}
-        </button>
+        {/* Mobile Buttons (Cart + Menu Toggle) */}
+        <div className="md:hidden" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <button 
+            onClick={() => setActiveView('checkout')}
+            style={{ padding: '0.45rem 0.75rem', background: '#121218', border: '1px solid var(--color-neon-red)', color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', position: 'relative' }}
+          >
+            <ShoppingCart style={{ width: '18px', height: '18px', color: 'var(--color-neon-red)' }} />
+            {totalQuantity > 0 && (
+              <span style={{ background: 'var(--color-neon-red)', color: '#ffffff', borderRadius: '50%', padding: '0.1rem 0.4rem', fontSize: '0.68rem', fontWeight: 900 }}>
+                {totalQuantity}
+              </span>
+            )}
+          </button>
+
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{ padding: '0.5rem', background: '#121218', border: '1px solid rgba(255,0,60,0.5)', color: 'var(--color-neon-red)', cursor: 'pointer', display: 'block' }}
+            aria-label="Toggle Navigation"
+          >
+            {mobileMenuOpen ? <X style={{ width: '24px', height: '24px' }} /> : <Menu style={{ width: '24px', height: '24px' }} />}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile Menu Dropdown */}
@@ -159,6 +187,17 @@ export const Navbar: React.FC = () => {
           >
             <span>TERMOS E CONDIÇÕES</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-neon-red)' }}>// 03</span>
+          </button>
+
+          <button 
+            onClick={() => { setActiveView('checkout'); setMobileMenuOpen(false); }}
+            style={{ background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem', textAlign: 'left', color: activeView === 'checkout' ? 'var(--color-neon-red)' : '#ffffff', fontWeight: 700, fontSize: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShoppingCart style={{ width: '18px', height: '18px', color: 'var(--color-neon-red)' }} />
+              <span>CARRINHO DE COMPRAS ({totalQuantity})</span>
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-neon-red)' }}>// CART</span>
           </button>
 
           <a 

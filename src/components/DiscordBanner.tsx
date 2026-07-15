@@ -19,11 +19,11 @@ export const DiscordBanner: React.FC = () => {
               alt="Pulse" 
               style={{ width: '14px', height: '14px', objectFit: 'contain' }}
             />
-            <span>// COMUNIDADE DISCORD BLINDADA</span>
+            <span>// COMUNIDADE OFICIAL NO DISCORD</span>
           </div>
 
           <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#ffffff', textTransform: 'uppercase', lineHeight: 1.15, marginBottom: '1rem' }}>
-            JUNTE-SE À ELITE DA <span style={{ color: 'var(--color-neon-red)' }} className="neon-glow-text">{config.storeName}</span>
+            JUNTE-SE À COMUNIDADE <span style={{ color: 'var(--color-neon-red)' }} className="neon-glow-text">{config.storeName}</span>
           </h2>
 
           <p style={{ color: '#c0c0d0', fontSize: '1rem', fontWeight: 300, lineHeight: 1.6, marginBottom: '1.8rem' }}>
@@ -37,11 +37,11 @@ export const DiscordBanner: React.FC = () => {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <ShieldCheck style={{ width: '18px', height: '18px', color: 'var(--color-neon-cyan)' }} />
-              <span>Suporte Anti-Quedas</span>
+              <span>Suporte #1 do Brasil</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Zap style={{ width: '18px', height: '18px', color: '#ffee00' }} />
-              <span>Entrega Imediata no Ticket</span>
+              <span>Entrega Imediata no Ticket ou Via Direct</span>
             </div>
           </div>
         </div>
@@ -63,12 +63,12 @@ export const DiscordBanner: React.FC = () => {
             className="btn-cyber animate-pulse-glow"
             style={{ padding: '1rem 2.2rem', fontSize: '1rem', whiteSpace: 'nowrap' }}
           >
-            <span>ENTRAR NO SERVIDOR VIP</span>
+            <span>ENTRAR NO SERVIDOR</span>
             <ExternalLink style={{ width: '18px', height: '18px' }} />
           </a>
 
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#888899', textTransform: 'uppercase' }}>
-            ⚡ Acesso Imediato & Gratuito
+            Acesso Imediato
           </span>
         </div>
       </div>

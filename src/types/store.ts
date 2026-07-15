@@ -46,5 +46,17 @@ export interface StoreConfig {
   };
 }
 
-export type ViewTab = 'home' | 'terms' | 'admin';
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface Coupon {
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  description: string;
+}
+
+export type ViewTab = 'home' | 'terms' | 'admin' | 'checkout';
 export type AdminTab = 'overview' | 'products' | 'terms' | 'settings' | 'security';

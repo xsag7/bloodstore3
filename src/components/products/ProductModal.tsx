@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Product } from '../../types/store';
 import { useStore } from '../../context/StoreContext';
-import { X, Check, ShoppingCart, ExternalLink, Sparkles, ShieldCheck, Copy, MessageSquare } from 'lucide-react';
+import { X, Check, ShoppingCart, ExternalLink, Sparkles, ShieldCheck, MessageSquare, Plus } from 'lucide-react';
 
 interface ProductModalProps {
   product: Product | null;
@@ -9,19 +9,13 @@ interface ProductModalProps {
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
-  const { config } = useStore();
-  const [copiedText, setCopiedText] = useState(false);
+  const { config, addToCart, setActiveView } = useStore();
+  const [addedToast, setAddedToast] = useState(false);
 
   if (!product) return null;
 
   const discordUrl = product.discordUrl || config.globalDiscordUrl;
   const orderMessage = `Olá equipe Blood Store! Quero adquirir o produto:\n👉 Item: ${product.name}\n💰 Valor: R$ ${product.price.toFixed(2)}\n🏷️ Tag: ${product.tag}`;
-
-  const handleCopyMessage = () => {
-    navigator.clipboard.writeText(orderMessage);
-    setCopiedText(true);
-    setTimeout(() => setCopiedText(false), 3000);
-  };
 
   const handleProceedToDiscord = () => {
     navigator.clipboard.writeText(orderMessage);
@@ -135,32 +129,41 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="p-6 bg-[#161620] border-t border-[#ff003c]/40 flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-0">
+        <div className="p-6 bg-[#161620] border-t border-[#ff003c]/40 flex flex-wrap items-center justify-between gap-3 sticky bottom-0">
           <button 
-            onClick={handleCopyMessage}
-            className="w-full sm:w-auto px-4 py-3 bg-[#191922] border border-[#ff003c]/50 hover:border-[#ff003c] text-white font-mono text-xs flex items-center justify-center gap-2 transition-all"
+            onClick={() => {
+              addToCart(product, 1);
+              setAddedToast(true);
+              setTimeout(() => { setAddedToast(false); onClose(); }, 1200);
+            }}
+            className="btn-cyber-outline py-3 px-5 text-xs flex items-center justify-center gap-2"
           >
-            {copiedText ? (
-              <>
-                <Check className="w-4 h-4 text-green-400" />
-                <span>MENSAGEM COPIADA COM SUCESSO!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4 text-[#ff003c]" />
-                <span>COPIAR PEDIDO PARA ABRIR NO DISCORD</span>
-              </>
-            )}
+            {addedToast ? <Check className="w-4 h-4 text-green-400" /> : <Plus className="w-4 h-4 text-[#ff003c]" />}
+            <span>{addedToast ? 'ADICIONADO!' : 'ADICIONAR AO CARRINHO'}</span>
           </button>
 
-          <button 
-            onClick={handleProceedToDiscord}
-            className="btn-cyber w-full sm:w-auto py-3 px-6 text-sm flex items-center justify-center gap-2"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span>COMPRAR AGORA NO DISCORD</span>
-            <ExternalLink className="w-4 h-4 ml-1" />
-          </button>
+          <div className="flex items-center gap-3 flex-1 justify-end">
+            <button 
+              onClick={handleProceedToDiscord}
+              className="py-3 px-4 bg-[#191922] border border-gray-700 hover:border-[#00f0ff] text-gray-200 font-mono text-xs flex items-center justify-center gap-1.5 transition-all"
+              title="Pagar direto no Discord sem passar pelo checkout"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-[#00f0ff]" />
+              <span>DISCORD DIRETO</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                addToCart(product, 1);
+                setActiveView('checkout');
+                onClose();
+              }}
+              className="btn-cyber py-3 px-6 text-sm flex items-center justify-center gap-2"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>FINALIZAR NO CHECKOUT</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

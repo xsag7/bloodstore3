@@ -172,13 +172,14 @@ export const ProductsView: React.FC = () => {
                     {product.status}
                   </span>
                 </td>
-                <td className="py-3 px-4 text-right space-x-2">
+                <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
                   <button
                     onClick={() => handleOpenEdit(product)}
-                    className="p-2 bg-[#1c1c29] border border-gray-700 hover:border-[#ff003c] text-gray-300 hover:text-white transition-all"
-                    title="Editar produto"
+                    className="py-1.5 px-3 bg-[#1c1c29] border border-gray-700 hover:border-[#ff003c] text-gray-200 hover:text-white transition-all inline-flex items-center gap-1.5 font-mono text-xs"
+                    title="Editar imagem, preço e detalhes do produto"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="w-3.5 h-3.5 text-[#ff003c]" />
+                    <span>Editar Imagem / Preço</span>
                   </button>
                   <button
                     onClick={() => {
@@ -186,7 +187,7 @@ export const ProductsView: React.FC = () => {
                         deleteProduct(product.id);
                       }
                     }}
-                    className="p-2 bg-red-950/40 border border-red-700/50 hover:border-red-500 text-red-400 transition-all"
+                    className="p-1.5 bg-red-950/40 border border-red-700/50 hover:border-red-500 text-red-400 transition-all inline-flex items-center justify-center"
                     title="Excluir produto"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -207,9 +208,12 @@ export const ProductsView: React.FC = () => {
 
       {/* Create / Edit Modal Form */}
       {(isCreating || editingProduct) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+        <div 
+          className="animate-fadeIn" 
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: 'rgba(0, 0, 0, 0.88)', backdropFilter: 'blur(8px)' }}
+        >
           <div 
-            className="relative w-full max-w-2xl bg-[#121218] border-2 border-[#ff003c] neon-glow max-h-[90vh] overflow-y-auto flex flex-col"
+            style={{ position: 'relative', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto', background: '#121218', border: '2px solid var(--color-neon-red)', borderRadius: '8px', boxShadow: '0 0 30px rgba(255, 0, 60, 0.35)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 bg-[#191922] border-b border-[#ff003c]/40 sticky top-0 z-10">
@@ -335,18 +339,70 @@ export const ProductsView: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-mono text-xs text-gray-300 uppercase mb-1">
-                  URL da Imagem do Produto
+              <div className="p-4 bg-[#0d0d14] border border-gray-800 space-y-3 rounded">
+                <label className="block font-mono text-xs text-white uppercase font-bold flex items-center justify-between">
+                  <span>URL DA IMAGEM DO PRODUTO (OU ESCOLHA UM PRESET)</span>
+                  <span className="text-gray-400 font-normal">Preview Ao Vivo</span>
                 </label>
-                <input 
-                  type="text"
-                  required
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full px-3 py-2 bg-[#0b0b0b] border border-gray-700 focus:border-[#ff003c] text-white font-mono text-xs"
-                />
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.25rem' }}>
+                  <div style={{ width: '100px', height: '100px', flexShrink: 0, background: '#000000', border: '2px solid var(--color-neon-red)', borderRadius: '6px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    {formData.imageUrl ? (
+                      <img 
+                        src={formData.imageUrl} 
+                        alt="Preview" 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop';
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '0.65rem', color: '#666677', textAlign: 'center', padding: '4px', fontFamily: 'var(--font-mono)' }}>Sem Imagem</span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 w-full space-y-2">
+                    <input 
+                      type="text"
+                      required
+                      value={formData.imageUrl}
+                      onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                      placeholder="Cole o link da imagem (ex: https://... ou /fotos/...)"
+                      className="w-full px-3 py-2 bg-[#0b0b0b] border border-gray-700 focus:border-[#ff003c] text-white font-mono text-xs"
+                    />
+
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop' })}
+                        className="px-2 py-1 bg-[#1a1a24] hover:bg-[#ff003c]/20 border border-gray-700 text-[11px] text-gray-300 hover:text-white font-mono transition-all"
+                      >
+                        🎮 Gamer/Setup
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop' })}
+                        className="px-2 py-1 bg-[#1a1a24] hover:bg-[#ff003c]/20 border border-gray-700 text-[11px] text-gray-300 hover:text-white font-mono transition-all"
+                      >
+                        💬 Nitro/Discord
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop' })}
+                        className="px-2 py-1 bg-[#1a1a24] hover:bg-[#ff003c]/20 border border-gray-700 text-[11px] text-gray-300 hover:text-white font-mono transition-all"
+                      >
+                        🔥 Engajamento/Social
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop' })}
+                        className="px-2 py-1 bg-[#1a1a24] hover:bg-[#ff003c]/20 border border-gray-700 text-[11px] text-gray-300 hover:text-white font-mono transition-all"
+                      >
+                        ⚡ Cyber Tech
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>

@@ -20,7 +20,7 @@ export const Footer: React.FC = () => {
         {/* Col 1: Brand Info */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', cursor: 'pointer' }} onClick={() => setActiveView('home')}>
-            <div style={{ width: '40px', height: '40px', background: '#121218', border: '1px solid var(--color-neon-red)', display: 'flex', alignItems: 'center', justify-center: 'center', overflow: 'hidden' }} className="neon-glow">
+            <div style={{ width: '40px', height: '40px', background: '#121218', border: '1px solid var(--color-neon-red)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }} className="neon-glow">
               <img 
                 src="/fotos/Gemini_Generated_Image_v1yi2kv1yi2kv1yi.png" 
                 alt="Blood Crest" 
@@ -32,7 +32,7 @@ export const Footer: React.FC = () => {
             </span>
           </div>
           <p style={{ color: '#a0a0b2', fontSize: '0.86rem', lineHeight: 1.6, fontWeight: 300, marginBottom: '1.25rem' }}>
-            A suprema referência em vendas de infoprodutos e serviços gamer do Brasil. Entregas rápidas, seguras e com garantia total em nosso Discord.
+            A suprema referência em vendas de infoprodutos e serviços do Brasil. Entregas rápidas, seguras e com garantia total em nosso Discord.
           </p>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#666677' }}>
             © {new Date().getFullYear()} {config.storeName}. Todos os direitos reservados.
@@ -42,7 +42,7 @@ export const Footer: React.FC = () => {
         {/* Col 2: Quick Navigation */}
         <div>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--color-neon-red)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.25rem' }}>
-            // NAVEGAÇÃO RÁPIDA
+            // NAVEGAÇÃO
           </h4>
           <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.65rem', fontSize: '0.88rem', color: '#d0d0e0' }}>
             <li>
@@ -71,7 +71,7 @@ export const Footer: React.FC = () => {
         {/* Col 3: Security & Trust */}
         <div>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--color-neon-red)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.25rem' }}>
-            // GARANTIA & BLINDAGEM
+            // GARANTIA & SEGURANÇA
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.84rem', color: '#a0a0b2', fontWeight: 300 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -83,7 +83,7 @@ export const Footer: React.FC = () => {
               <span>Entrega Automatizada & Segura</span>
             </div>
             <div style={{ padding: '0.75rem', background: '#121218', border: '1px solid rgba(255,0,60,0.3)', borderRadius: '6px', marginTop: '0.4rem', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#ffffff' }}>
-              🔒 SISTEMA ANTI-QUEDA EM ATIVIDADE
+              Kiover developer
             </div>
           </div>
         </div>
@@ -94,7 +94,7 @@ export const Footer: React.FC = () => {
             // ATENDIMENTO
           </h4>
           <p style={{ color: '#a0a0b2', fontSize: '0.86rem', lineHeight: 1.6, fontWeight: 300, marginBottom: '1.25rem' }}>
-            Dúvidas no pré-venda ou pós-venda? Abra um ticket em nosso servidor para falar diretamente com nossa equipe gerencial.
+            Dúvidas no pré-venda ou pós-venda? Abra um ticket em nosso servidor para falar diretamente com nossa equipe.
           </p>
           <a 
             href={config.globalDiscordUrl}
@@ -110,9 +110,9 @@ export const Footer: React.FC = () => {
       </div>
 
       <div style={{ maxWidth: '1280px', margin: '3rem auto 0 auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#666677' }}>
-        <div>BLOOD STORE v2.4 // CYBERPUNK EDITION</div>
+        <div>BLOOD STORE </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <span>Desenvolvido com excelência e supremacia gamer</span>
+          <span>Desenvolvido com excelência por Kioverdll</span>
           <Heart style={{ width: '12px', height: '12px', color: 'var(--color-neon-red)', fill: 'var(--color-neon-red)' }} />
         </div>
       </div>

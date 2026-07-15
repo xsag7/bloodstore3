@@ -10,7 +10,8 @@ import { DiscordBanner } from './components/DiscordBanner';
 import { Footer } from './components/Footer';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
-import { Lock, ShieldAlert, Terminal } from 'lucide-react';
+import { AdminLoginPage } from './components/admin/AdminLoginPage';
+import { CheckoutPage } from './components/checkout/CheckoutPage';
 import './index.css';
 
 const MainContent: React.FC = () => {
@@ -28,9 +29,7 @@ const MainContent: React.FC = () => {
       
       if (path === '/admin' || hash === '#admin' || search.includes('view=admin')) {
         setActiveView('admin');
-        if (!isAdminLoggedIn) {
-          setAdminLoginOpen(true);
-        }
+        setAdminLoginOpen(false);
       }
     };
 
@@ -101,32 +100,14 @@ const MainContent: React.FC = () => {
             {isAdminLoggedIn ? (
               <AdminDashboard />
             ) : (
-              /* Secret Route Locked Banner when visited without active auth */
-              <div className="py-24 px-4 text-center max-w-lg mx-auto space-y-6">
-                <div className="hud-card p-8 sm:p-10 border-2 border-[#ff003c] neon-glow bg-[#121218] relative overflow-hidden">
-                  <div className="w-16 h-16 bg-[#1a141a] border border-[#ff003c] mx-auto flex items-center justify-center mb-5 neon-glow">
-                    <Lock className="w-8 h-8 text-[#ff003c] animate-pulse" />
-                  </div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-950/80 border border-red-500 font-mono text-[11px] text-red-400 uppercase tracking-widest mb-3">
-                    <ShieldAlert className="w-3.5 h-3.5" />
-                    <span>ENDPOINT DE COMANDO SECRETO</span>
-                  </div>
-                  <h2 className="text-2xl font-black text-white font-display uppercase mb-2">
-                    ROTA DE ACESSO RESTRITO
-                  </h2>
-                  <p className="text-gray-400 text-sm mb-6 font-light leading-relaxed">
-                    Você acessou a URL secreta de comando (<strong className="text-white">/admin</strong>). Para gerenciar os produtos, termos e configurações, insira a palavra-passe de segurança.
-                  </p>
-                  <button 
-                    onClick={() => setAdminLoginOpen(true)}
-                    className="btn-cyber py-3.5 px-8 text-xs w-full flex items-center justify-center gap-2"
-                  >
-                    <Terminal className="w-4 h-4" />
-                    <span>DIGITAR PASSCODE DE COMANDO</span>
-                  </button>
-                </div>
-              </div>
+              <AdminLoginPage />
             )}
+          </div>
+        )}
+
+        {activeView === 'checkout' && (
+          <div className="animate-fadeIn">
+            <CheckoutPage />
           </div>
         )}
       </main>
@@ -134,16 +115,11 @@ const MainContent: React.FC = () => {
       {/* Footer */}
       <Footer />
 
-      {/* Admin Security Login Modal */}
+      {/* Admin Security Login Modal (Only used if triggered outside of /admin route) */}
       <AdminLoginModal 
-        isOpen={adminLoginOpen} 
+        isOpen={adminLoginOpen && activeView !== 'admin'} 
         onClose={() => {
           setAdminLoginOpen(false);
-          if (!isAdminLoggedIn && activeView === 'admin') {
-            // If they cancel modal while on /admin without logging in, return to home
-            setActiveView('home');
-            window.history.pushState({}, '', '/');
-          }
         }} 
       />
     </div>

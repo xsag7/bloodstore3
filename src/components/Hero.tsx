@@ -34,9 +34,9 @@ export const Hero: React.FC = () => {
             alt="Pulse" 
             style={{ width: '16px', height: '16px', objectFit: 'contain' }}
           />
-          <span style={{ color: 'var(--color-neon-red)', fontWeight: 700 }}>BLOOD SYSTEM v2.4</span>
+          <span style={{ color: 'var(--color-neon-red)', fontWeight: 700 }}>BLOOD </span>
           <span style={{ color: '#666677' }}>//</span>
-          <span>SERVIDORES 100% ONLINE & BLINDADOS</span>
+          <span>SERVIDOR ONLINE </span>
           <Activity style={{ width: '14px', height: '14px', color: 'var(--color-neon-red)', marginLeft: '4px' }} />
         </div>
 
@@ -49,7 +49,7 @@ export const Hero: React.FC = () => {
             />
           </div>
           <div className="brand-crest-badge">
-            VIP STORE
+            STORE Blood
           </div>
         </div>
 

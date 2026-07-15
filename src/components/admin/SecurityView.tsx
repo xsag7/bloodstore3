@@ -67,13 +67,13 @@ export const SecurityView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 font-mono text-xs text-[#ff003c] uppercase tracking-widest mb-1">
             <Terminal className="w-4 h-4 animate-pulse" />
-            <span>// BLOOD SHIELD : BLINDAGEM & AUDITORIA //</span>
+            <span>// AUDITORIA E LOGS DO SISTEMA //</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-white font-display uppercase">
-            CONTROLE DE SEGURANÇA E INTRUSÃO
+            HISTÓRICO E SEGURANÇA DO PAINEL
           </h2>
           <p className="text-gray-400 text-sm mt-1 font-light">
-            Monitore tentativas maliciosas de login, travas de proteção ativas e logs de conexões no endpoint secreto <strong className="text-white">/admin</strong>.
+            Monitore acessos administrativos, tentativas de login e sessões ativas no painel de controle da loja.
           </p>
         </div>
 

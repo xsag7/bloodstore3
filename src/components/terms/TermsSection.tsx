@@ -29,7 +29,7 @@ export const TermsSection: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 font-mono text-xs text-[#ff003c] uppercase tracking-widest mb-2">
               <Sparkles className="w-4 h-4 animate-spin" />
-              <span>// PROTOCOLO DE SEGURANÇA E ACORDO DO CLIENTE //</span>
+              <span>// REGRAS DE COMPRA E ACORDO DO CLIENTE //</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-black font-display text-white uppercase tracking-tight">
               TERMOS & <span className="text-[#ff003c] neon-glow-text">CONDIÇÕES</span>

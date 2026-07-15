@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { Product, TermItem, StoreConfig, ViewTab, AdminTab } from '../types/store';
+import type { Product, TermItem, StoreConfig, ViewTab, AdminTab, CartItem, Coupon } from '../types/store';
 
 interface StoreContextType {
   products: Product[];
   terms: TermItem[];
   config: StoreConfig;
+  cart: CartItem[];
+  coupons: Coupon[];
+  appliedCoupon: Coupon | null;
   isAdminLoggedIn: boolean;
   activeView: ViewTab;
   adminTab: AdminTab;
@@ -14,6 +17,12 @@ interface StoreContextType {
   setAdminTab: (tab: AdminTab) => void;
   setSearchQuery: (query: string) => void;
   setSelectedTag: (tag: string) => void;
+  addToCart: (product: Product, quantity?: number) => void;
+  removeFromCart: (productId: string) => void;
+  updateCartQuantity: (productId: string, quantity: number) => void;
+  clearCart: () => void;
+  applyCoupon: (code: string) => { success: boolean; message: string; coupon?: Coupon };
+  setAppliedCoupon: (coupon: Coupon | null) => void;
   loginAdmin: (password: string) => boolean;
   logoutAdmin: () => void;
   addProduct: (product: Omit<Product, 'id'>) => void;
@@ -28,11 +37,17 @@ interface StoreContextType {
   importBackup: (jsonString: string) => boolean;
 }
 
+const DEFAULT_COUPONS: Coupon[] = [
+  { code: 'BLOOD10', type: 'percentage', value: 10, description: '10% de desconto em qualquer item na Blood Store!' },
+  { code: 'VIP20', type: 'percentage', value: 20, description: '20% de desconto exclusivo para membros VIP!' },
+  { code: 'KIOVER', type: 'percentage', value: 15, description: '15% de desconto especial por indicação de parceiro!' }
+];
+
 const DEFAULT_CONFIG: StoreConfig = {
   storeName: 'Blood Store',
-  bannerTitle: 'A SUPREMACIA EM INFOPRODUTOS & SERVIÇOS GAMER',
-  bannerSubtitle: 'Produtos digitais, otimizações extremas e contas exclusivas com entrega rápida via Discord e garantia total.',
-  announcementBanner: '⚡ SYSTEM NOTICE: ENTREGA EM ATÉ 24H VIA DISCORD // PAGAMENTO EXCLUSIVO VIA PIX // ATENDIMENTO PRIORITÁRIO PARA BOOSTERS ⚡',
+  bannerTitle: 'EXCELÊNCIA EM INFOPRODUTOS & SERVIÇOS',
+  bannerSubtitle: 'Produtos digitais, otimizações e contas exclusivas com entrega rápida via Discord e garantia total.',
+  announcementBanner: '⚡ BLOOD NOTICIA: ENTREGA EM ATÉ 24H VIA DISCORD // PAGAMENTO VIA PIX // ATENDIMENTO PRIORITÁRIO PARA BOOSTERS ⚡',
   globalDiscordUrl: 'https://discord.gg/Gvbg5WYPBP',
   adminPassword: 'admin',
   accentColor: '#ff003c',
@@ -268,6 +283,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTag, setSelectedTag] = useState<string>('TODOS');
 
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const saved = localStorage.getItem('bloodstore_cart');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [coupons] = useState<Coupon[]>(DEFAULT_COUPONS);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+
   useEffect(() => {
     localStorage.setItem('bloodstore_products', JSON.stringify(products));
   }, [products]);
@@ -279,6 +302,56 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('bloodstore_config', JSON.stringify(config));
   }, [config]);
+
+  useEffect(() => {
+    localStorage.setItem('bloodstore_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  const addToCart = (product: Product, quantity = 1) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.product.id === product.id);
+      if (existing) {
+        return prev.map(item =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+      } else {
+        return [...prev, { product, quantity }];
+      }
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart(prev => prev.filter(item => item.product.id !== productId));
+  };
+
+  const updateCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+    } else {
+      setCart(prev =>
+        prev.map(item =>
+          item.product.id === productId ? { ...item, quantity } : item
+        )
+      );
+    }
+  };
+
+  const clearCart = () => {
+    setCart([]);
+    setAppliedCoupon(null);
+  };
+
+  const applyCoupon = (code: string) => {
+    const cleanCode = code.trim().toUpperCase();
+    const found = coupons.find(c => c.code === cleanCode);
+    if (!found) {
+      return { success: false, message: 'Cupom inválido ou expirado!' };
+    }
+    setAppliedCoupon(found);
+    return { success: true, message: `Cupom [${found.code}] aplicado com sucesso!`, coupon: found };
+  };
 
   const loginAdmin = (password: string): boolean => {
     if (password === config.adminPassword) {
@@ -331,9 +404,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setProducts(DEFAULT_PRODUCTS);
     setTerms(DEFAULT_TERMS);
     setConfig(DEFAULT_CONFIG);
-    localStorage.setItem('bloodstore_products', JSON.stringify(DEFAULT_PRODUCTS));
-    localStorage.setItem('bloodstore_terms', JSON.stringify(DEFAULT_TERMS));
-    localStorage.setItem('bloodstore_config', JSON.stringify(DEFAULT_CONFIG));
+    localStorage.removeItem('bloodstore_products');
+    localStorage.removeItem('bloodstore_terms');
+    localStorage.removeItem('bloodstore_config');
   };
 
   const exportBackup = (): string => {
@@ -370,6 +443,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       products,
       terms,
       config,
+      cart,
+      coupons,
+      appliedCoupon,
       isAdminLoggedIn,
       activeView,
       adminTab,
@@ -379,6 +455,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setAdminTab,
       setSearchQuery,
       setSelectedTag,
+      addToCart,
+      removeFromCart,
+      updateCartQuantity,
+      clearCart,
+      applyCoupon,
+      setAppliedCoupon,
       loginAdmin,
       logoutAdmin,
       addProduct,

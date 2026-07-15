@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Product } from '../../types/store';
 import { useStore } from '../../context/StoreContext';
-import { ShoppingCart, Check, Sparkles, Tag } from 'lucide-react';
+import { ShoppingCart, Check, Sparkles, Tag, Plus } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -9,17 +9,23 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelectProduct }) => {
-  const { config } = useStore();
-  const [copied, setCopied] = useState(false);
+  const { addToCart, setActiveView } = useStore();
+  const [addedToast, setAddedToast] = useState(false);
 
-  const discordUrl = product.discordUrl || config.globalDiscordUrl;
-
-  const handleBuyClick = (e: React.MouseEvent) => {
+  const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(`Quero comprar: ${product.name} (R$ ${product.price.toFixed(2)})`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
-    window.open(discordUrl, '_blank', 'noopener,noreferrer');
+    if (product.status === 'ESGOTADO') return;
+    addToCart(product, 1);
+    setAddedToast(true);
+    setTimeout(() => setAddedToast(false), 2000);
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (product.status === 'ESGOTADO') return;
+    addToCart(product, 1);
+    setActiveView('checkout');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -27,7 +33,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelectProdu
       onClick={() => onSelectProduct && onSelectProduct(product)}
       className="product-card hud-card"
     >
-      {/* Top Banner & Badges */}
+      {/* Top Banner & Badges (Compact 135px height) */}
       <div className="product-img-wrapper">
         <img 
           src={product.imageUrl} 
@@ -36,91 +42,92 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelectProdu
             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop';
           }}
         />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #121218, transparent)', opacity: 0.85 }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #121218 5%, transparent 90%)', opacity: 0.9 }} />
 
         {/* Tag Pill */}
-        <div style={{ position: 'absolute', top: '12px', left: '12px', padding: '0.25rem 0.65rem', background: 'rgba(11,11,11,0.9)', border: '1px solid var(--color-neon-red)', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#ffffff', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Tag style={{ width: '12px', height: '12px', color: 'var(--color-neon-red)' }} />
+        <div style={{ position: 'absolute', top: '8px', left: '8px', padding: '0.2rem 0.55rem', background: 'rgba(11,11,11,0.9)', border: '1px solid var(--color-neon-red)', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: '#ffffff', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+          <Tag style={{ width: '10px', height: '10px', color: 'var(--color-neon-red)' }} />
           <span>{product.tag}</span>
         </div>
 
         {/* Promotional Badge */}
         {product.badge && (
-          <div style={{ position: 'absolute', top: '12px', right: '12px', padding: '0.25rem 0.65rem', background: 'var(--color-neon-red)', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.68rem', color: '#ffffff', textTransform: 'uppercase', boxShadow: '0 0 10px rgba(255,0,60,0.6)' }}>
+          <div style={{ position: 'absolute', top: '8px', right: '8px', padding: '0.2rem 0.55rem', background: 'var(--color-neon-red)', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.62rem', color: '#ffffff', textTransform: 'uppercase', boxShadow: '0 0 10px rgba(255,0,60,0.6)' }}>
             {product.badge}
           </div>
         )}
 
         {/* Status Pill */}
-        <div style={{ position: 'absolute', bottom: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.15rem 0.55rem', background: 'rgba(11,11,11,0.85)', border: '1px solid rgba(255,255,255,0.2)', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#e0e0e0', textTransform: 'uppercase' }}>
-          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: product.status === 'DISPONÍVEL' ? '#22c55e' : product.status === 'PROMOÇÃO' ? '#00f0ff' : '#ef4444' }} />
+        <div style={{ position: 'absolute', bottom: '6px', right: '8px', display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.12rem 0.45rem', background: 'rgba(11,11,11,0.85)', border: '1px solid rgba(255,255,255,0.2)', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#e0e0e0', textTransform: 'uppercase' }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: product.status === 'DISPONÍVEL' ? '#22c55e' : product.status === 'PROMOÇÃO' ? '#00f0ff' : '#ef4444' }} />
           <span>{product.status}</span>
         </div>
       </div>
 
-      {/* Card Content */}
+      {/* Card Content (Compact Padding & Fonts) */}
       <div className="product-body">
         <div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--color-neon-red)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--color-neon-red)', marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
             // ID: {product.slug.toUpperCase()}
           </div>
           
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-display)', marginBottom: '0.5rem', lineHeight: 1.3 }}>
+          <h3 className="line-clamp-1" style={{ fontSize: '1.02rem', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-display)', marginBottom: '0.35rem', lineHeight: 1.2 }}>
             {product.name}
           </h3>
 
-          <p style={{ fontSize: '0.86rem', color: '#a0a0b2', marginBottom: '1.25rem', lineHeight: 1.5, fontWeight: 300 }}>
+          <p className="line-clamp-2" style={{ fontSize: '0.78rem', color: '#a0a0b2', marginBottom: '0.65rem', lineHeight: 1.4, fontWeight: 300 }}>
             {product.description}
           </p>
 
-          {/* Bullet Features */}
+          {/* 1 Compact Highlight Feature */}
           {product.features && product.features.length > 0 && (
-            <ul style={{ marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.85rem', listStyle: 'none' }}>
-              {product.features.slice(0, 3).map((feat, idx) => (
-                <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: '#d0d0e0', marginBottom: '0.4rem' }}>
-                  <Sparkles style={{ width: '13px', height: '13px', color: 'var(--color-neon-red)', flexShrink: 0 }} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{feat}</span>
-                </li>
-              ))}
-            </ul>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', color: '#d0d0e0', marginBottom: '0.8rem', background: 'rgba(255,0,60,0.06)', padding: '0.35rem 0.5rem', borderLeft: '2px solid var(--color-neon-red)' }}>
+              <Sparkles style={{ width: '12px', height: '12px', color: 'var(--color-neon-red)', flexShrink: 0 }} />
+              <span className="truncate">{product.features[0]}</span>
+            </div>
           )}
         </div>
 
-        {/* Price & Action Area */}
+        {/* Price & Action Area (Compact Buttons) */}
         <div className="product-price-row">
           <div>
-            <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#888899', textTransform: 'uppercase' }}>A partir de</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-              <span style={{ fontSize: '1.35rem', fontWeight: 900, fontFamily: 'var(--font-mono)', color: '#ffffff' }}>
+            <div style={{ fontSize: '0.62rem', fontFamily: 'var(--font-mono)', color: '#888899', textTransform: 'uppercase' }}>A partir de</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+              <span style={{ fontSize: '1.2rem', fontWeight: 900, fontFamily: 'var(--font-mono)', color: '#ffffff' }}>
                 R$ {product.price.toFixed(2).replace('.', ',')}
               </span>
               {product.originalPrice && (
-                <span style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: '#777788', textDecoration: 'line-through' }}>
+                <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: '#777788', textDecoration: 'line-through' }}>
                   R$ {product.originalPrice.toFixed(2).replace('.', ',')}
                 </span>
               )}
             </div>
           </div>
 
-          <button 
-            onClick={handleBuyClick}
-            disabled={product.status === 'ESGOTADO'}
-            className="btn-cyber"
-            style={{ padding: '0.6rem 1.1rem', fontSize: '0.78rem', opacity: product.status === 'ESGOTADO' ? 0.5 : 1 }}
-            title="Ao clicar, você será redirecionado para o nosso Discord e o nome do item será copiado"
-          >
-            {copied ? (
-              <>
-                <Check style={{ width: '16px', height: '16px', color: '#4ade80' }} />
-                <span>COPIADO!</span>
-              </>
-            ) : (
-              <>
-                <ShoppingCart style={{ width: '16px', height: '16px' }} />
-                <span>COMPRAR</span>
-              </>
-            )}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            {/* Quick Add to Cart Button */}
+            <button 
+              onClick={handleAddToCart}
+              disabled={product.status === 'ESGOTADO'}
+              className="btn-cyber-outline"
+              style={{ padding: '0.45rem 0.65rem', fontSize: '0.75rem', opacity: product.status === 'ESGOTADO' ? 0.5 : 1 }}
+              title="Adicionar ao Carrinho"
+            >
+              {addedToast ? <Check style={{ width: '14px', height: '14px', color: '#4ade80' }} /> : <Plus style={{ width: '14px', height: '14px', color: 'var(--color-neon-red)' }} />}
+            </button>
+
+            {/* Buy Now Button (Goes right to Checkout or opens Modal) */}
+            <button 
+              onClick={handleBuyNow}
+              disabled={product.status === 'ESGOTADO'}
+              className="btn-cyber"
+              style={{ padding: '0.45rem 0.85rem', fontSize: '0.72rem', opacity: product.status === 'ESGOTADO' ? 0.5 : 1 }}
+              title="Finalizar compra no Carrinho / Checkout"
+            >
+              <ShoppingCart style={{ width: '13px', height: '13px' }} />
+              <span>COMPRAR</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
