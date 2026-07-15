@@ -37,8 +37,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
         {/* Modal Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 bg-[#191922] border-b border-[#ff003c]/40 sticky top-0 z-10">
           <div className="flex items-center gap-2 font-mono text-xs text-[#ff003c] uppercase tracking-widest">
+            <img 
+              src="/fotos/videos/a_3b92739a0066d125bf473beccfe5bbb1.gif" 
+              alt="Verified" 
+              className="w-4 h-4 object-contain rounded-full border border-[#ff003c]"
+            />
             <Sparkles className="w-4 h-4 animate-spin" />
-            <span>// BLOOD STORE : ITEM SPECIFICATION //</span>
+            <span>// BLOOD STORE : ESPECIFICAÇÃO DE PRODUTO //</span>
           </div>
           <button 
             onClick={onClose}

@@ -16,78 +16,70 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelectProdu
 
   const handleBuyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Copy product name to clipboard so user can easily paste in Discord ticket
     navigator.clipboard.writeText(`Quero comprar: ${product.name} (R$ ${product.price.toFixed(2)})`);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
-
-    // Open Discord in new tab
     window.open(discordUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
     <div 
       onClick={() => onSelectProduct && onSelectProduct(product)}
-      className="hud-card flex flex-col justify-between h-full group cursor-pointer overflow-hidden transition-all duration-300"
+      className="product-card hud-card"
     >
       {/* Top Banner & Badges */}
-      <div className="relative h-48 w-full overflow-hidden bg-[#16161c]">
+      <div className="product-img-wrapper">
         <img 
           src={product.imageUrl} 
           alt={product.name} 
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-90 group-hover:opacity-100"
           onError={(e) => {
-            // Fallback image if external URL fails
             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop';
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#121218] via-transparent to-transparent opacity-90" />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #121218, transparent)', opacity: 0.85 }} />
 
         {/* Tag Pill */}
-        <div className="absolute top-3 left-3 px-2.5 py-1 bg-[#0b0b0b]/90 border border-[#ff003c] font-mono text-[11px] text-white tracking-wider uppercase flex items-center gap-1.5">
-          <Tag className="w-3 h-3 text-[#ff003c]" />
+        <div style={{ position: 'absolute', top: '12px', left: '12px', padding: '0.25rem 0.65rem', background: 'rgba(11,11,11,0.9)', border: '1px solid var(--color-neon-red)', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#ffffff', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Tag style={{ width: '12px', height: '12px', color: 'var(--color-neon-red)' }} />
           <span>{product.tag}</span>
         </div>
 
-        {/* Status or Promotional Badge */}
+        {/* Promotional Badge */}
         {product.badge && (
-          <div className="absolute top-3 right-3 px-2.5 py-1 bg-[#ff003c] font-display font-bold text-[11px] text-white tracking-wide uppercase shadow-lg animate-pulse">
+          <div style={{ position: 'absolute', top: '12px', right: '12px', padding: '0.25rem 0.65rem', background: 'var(--color-neon-red)', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.68rem', color: '#ffffff', textTransform: 'uppercase', boxShadow: '0 0 10px rgba(255,0,60,0.6)' }}>
             {product.badge}
           </div>
         )}
 
-        {/* Status Indicator Pill */}
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2 py-0.5 bg-[#0b0b0b]/80 border border-gray-700/60 font-mono text-[10px]">
-          <span className={`w-2 h-2 rounded-full ${
-            product.status === 'DISPONÍVEL' ? 'bg-green-500 animate-ping' :
-            product.status === 'PROMOÇÃO' ? 'bg-[#00f0ff]' : 'bg-red-500'
-          }`} />
-          <span className="text-gray-200 uppercase">{product.status}</span>
+        {/* Status Pill */}
+        <div style={{ position: 'absolute', bottom: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.15rem 0.55rem', background: 'rgba(11,11,11,0.85)', border: '1px solid rgba(255,255,255,0.2)', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#e0e0e0', textTransform: 'uppercase' }}>
+          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: product.status === 'DISPONÍVEL' ? '#22c55e' : product.status === 'PROMOÇÃO' ? '#00f0ff' : '#ef4444' }} />
+          <span>{product.status}</span>
         </div>
       </div>
 
       {/* Card Content */}
-      <div className="p-5 flex-1 flex flex-col justify-between">
+      <div className="product-body">
         <div>
-          <div className="font-mono text-xs text-[#ff003c] mb-1 uppercase tracking-widest flex items-center gap-1">
-            <span>// ID: {product.slug.toUpperCase()}</span>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--color-neon-red)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            // ID: {product.slug.toUpperCase()}
           </div>
           
-          <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-[#ff003c] transition-colors line-clamp-1 mb-2 font-display">
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-display)', marginBottom: '0.5rem', lineHeight: 1.3 }}>
             {product.name}
           </h3>
 
-          <p className="text-sm text-gray-300 line-clamp-2 font-light mb-4 leading-relaxed">
+          <p style={{ fontSize: '0.86rem', color: '#a0a0b2', marginBottom: '1.25rem', lineHeight: 1.5, fontWeight: 300 }}>
             {product.description}
           </p>
 
           {/* Bullet Features */}
           {product.features && product.features.length > 0 && (
-            <ul className="mb-5 space-y-1.5 border-t border-gray-800/80 pt-3">
+            <ul style={{ marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.85rem', listStyle: 'none' }}>
               {product.features.slice(0, 3).map((feat, idx) => (
-                <li key={idx} className="flex items-center gap-2 text-xs text-gray-300">
-                  <Sparkles className="w-3 h-3 text-[#ff003c] flex-shrink-0" />
-                  <span className="truncate">{feat}</span>
+                <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', color: '#d0d0e0', marginBottom: '0.4rem' }}>
+                  <Sparkles style={{ width: '13px', height: '13px', color: 'var(--color-neon-red)', flexShrink: 0 }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{feat}</span>
                 </li>
               ))}
             </ul>
@@ -95,15 +87,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelectProdu
         </div>
 
         {/* Price & Action Area */}
-        <div className="pt-3 border-t border-[#ff003c]/20 flex items-center justify-between gap-3 mt-auto">
+        <div className="product-price-row">
           <div>
-            <div className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">A partir de</div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl md:text-2xl font-black font-mono text-white tracking-tight">
+            <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: '#888899', textTransform: 'uppercase' }}>A partir de</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.35rem', fontWeight: 900, fontFamily: 'var(--font-mono)', color: '#ffffff' }}>
                 R$ {product.price.toFixed(2).replace('.', ',')}
               </span>
               {product.originalPrice && (
-                <span className="text-xs font-mono text-gray-500 line-through">
+                <span style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: '#777788', textDecoration: 'line-through' }}>
                   R$ {product.originalPrice.toFixed(2).replace('.', ',')}
                 </span>
               )}
@@ -113,19 +105,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelectProdu
           <button 
             onClick={handleBuyClick}
             disabled={product.status === 'ESGOTADO'}
-            className={`btn-cyber py-2.5 px-4 text-xs font-bold tracking-wider flex items-center gap-1.5 ${
-              product.status === 'ESGOTADO' ? 'opacity-50 cursor-not-allowed bg-gray-800 border-gray-700 shadow-none' : ''
-            }`}
+            className="btn-cyber"
+            style={{ padding: '0.6rem 1.1rem', fontSize: '0.78rem', opacity: product.status === 'ESGOTADO' ? 0.5 : 1 }}
             title="Ao clicar, você será redirecionado para o nosso Discord e o nome do item será copiado"
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4 text-green-400" />
+                <Check style={{ width: '16px', height: '16px', color: '#4ade80' }} />
                 <span>COPIADO!</span>
               </>
             ) : (
               <>
-                <ShoppingCart className="w-4 h-4" />
+                <ShoppingCart style={{ width: '16px', height: '16px' }} />
                 <span>COMPRAR</span>
               </>
             )}

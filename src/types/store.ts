@@ -21,6 +21,15 @@ export interface TermItem {
   isImportant?: boolean;
 }
 
+export interface SecurityLogEntry {
+  id: string;
+  timestamp: string;
+  type: 'LOGIN_SUCCESS' | 'LOGIN_FAILED' | 'LOCKOUT_TRIGGERED' | 'HONEYPOT_TRAPPED' | 'IDLE_TIMEOUT' | 'PANIC_LOCK';
+  ipSignature: string;
+  userAgent: string;
+  details: string;
+}
+
 export interface StoreConfig {
   storeName: string;
   bannerTitle: string;
@@ -38,4 +47,4 @@ export interface StoreConfig {
 }
 
 export type ViewTab = 'home' | 'terms' | 'admin';
-export type AdminTab = 'overview' | 'products' | 'terms' | 'settings';
+export type AdminTab = 'overview' | 'products' | 'terms' | 'settings' | 'security';

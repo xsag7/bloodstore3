@@ -1,110 +1,119 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
-import { Flame, Terminal, ExternalLink } from 'lucide-react';
+import { Shield, Terminal, ExternalLink, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const { config, setActiveView } = useStore();
 
+  const handleScrollToProducts = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setActiveView('home');
+    setTimeout(() => {
+      const el = document.getElementById('produtos');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
   return (
-    <footer className="w-full bg-[#0b0b0b] border-t border-[#ff003c]/30 pt-16 pb-12 px-4 md:px-8 relative z-10 overflow-hidden">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
-        {/* Brand Col */}
-        <div className="md:col-span-1 space-y-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-[#121218] border border-[#ff003c] flex items-center justify-center neon-glow">
-              <Flame className="w-5 h-5 text-[#ff003c]" />
+    <footer className="footer-container">
+      <div className="footer-grid">
+        {/* Col 1: Brand Info */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', cursor: 'pointer' }} onClick={() => setActiveView('home')}>
+            <div style={{ width: '40px', height: '40px', background: '#121218', border: '1px solid var(--color-neon-red)', display: 'flex', alignItems: 'center', justify-center: 'center', overflow: 'hidden' }} className="neon-glow">
+              <img 
+                src="/fotos/Gemini_Generated_Image_v1yi2kv1yi2kv1yi.png" 
+                alt="Blood Crest" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             </div>
-            <span className="font-extrabold text-xl font-display tracking-wider text-white uppercase">
-              {config.storeName}
+            <span style={{ fontSize: '1.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#ffffff', letterSpacing: '1px' }}>
+              {config.storeName.toUpperCase()}
             </span>
           </div>
-          <p className="text-xs text-gray-400 font-light leading-relaxed">
-            Sua referência máxima em infoprodutos, otimização gamer extrema, robux, contas premium e engajamento. Entrega rápida via Discord.
+          <p style={{ color: '#a0a0b2', fontSize: '0.86rem', lineHeight: 1.6, fontWeight: 300, marginBottom: '1.25rem' }}>
+            A suprema referência em vendas de infoprodutos e serviços gamer do Brasil. Entregas rápidas, seguras e com garantia total em nosso Discord.
           </p>
-          <div className="flex items-center gap-2 text-xs font-mono text-[#ff003c]">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
-            <span>SISTEMA PIX EXCLUSIVO // 100% SEGURO</span>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#666677' }}>
+            © {new Date().getFullYear()} {config.storeName}. Todos os direitos reservados.
           </div>
         </div>
 
-        {/* Quick Navigation */}
-        <div className="space-y-3">
-          <h4 className="font-mono text-xs text-[#ff003c] uppercase tracking-widest font-bold">
+        {/* Col 2: Quick Navigation */}
+        <div>
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--color-neon-red)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.25rem' }}>
             // NAVEGAÇÃO RÁPIDA
           </h4>
-          <ul className="space-y-2 text-sm text-gray-400 font-light">
+          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.65rem', fontSize: '0.88rem', color: '#d0d0e0' }}>
             <li>
-              <button onClick={() => setActiveView('home')} className="hover:text-[#ff003c] transition-colors">
-                Página Inicial (Home)
+              <button onClick={() => setActiveView('home')} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontFamily: 'inherit' }}>
+                → Página Inicial
               </button>
             </li>
             <li>
-              <a href="#produtos" onClick={(e) => {
-                e.preventDefault();
-                setActiveView('home');
-                setTimeout(() => document.getElementById('produtos')?.scrollIntoView({ behavior: 'smooth' }), 100);
-              }} className="hover:text-[#ff003c] transition-colors">
-                Catálogo de Produtos
+              <a href="#produtos" onClick={handleScrollToProducts} style={{ color: 'inherit', textDecoration: 'none' }}>
+                → Catálogo de Produtos
               </a>
             </li>
             <li>
-              <button onClick={() => setActiveView('terms')} className="hover:text-[#ff003c] transition-colors">
-                Termos & Condições
+              <button onClick={() => setActiveView('terms')} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontFamily: 'inherit' }}>
+                → Termos & Garantias
               </button>
             </li>
             <li>
-              <button onClick={() => setActiveView('admin')} className="hover:text-[#ff003c] transition-colors flex items-center gap-1">
-                <Terminal className="w-3.5 h-3.5 text-[#ff003c]" />
-                <span>Painel Administrativo</span>
-              </button>
+              <a href={config.globalDiscordUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-neon-cyan)', textDecoration: 'none' }}>
+                → Servidor Discord VIP
+              </a>
             </li>
           </ul>
         </div>
 
-        {/* Products Highlights */}
-        <div className="space-y-3">
-          <h4 className="font-mono text-xs text-[#ff003c] uppercase tracking-widest font-bold">
-            // DESTAQUES DA LOJA
+        {/* Col 3: Security & Trust */}
+        <div>
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--color-neon-red)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.25rem' }}>
+            // GARANTIA & BLINDAGEM
           </h4>
-          <ul className="space-y-2 text-sm text-gray-400 font-light">
-            <li className="hover:text-white transition-colors cursor-pointer">Pacotes Robux (r0b6x)</li>
-            <li className="hover:text-white transition-colors cursor-pointer">Contas Verificadas 18+</li>
-            <li className="hover:text-white transition-colors cursor-pointer">Chaves & Contas Steam</li>
-            <li className="hover:text-white transition-colors cursor-pointer">Godlys Murder Mystery (MM2)</li>
-            <li className="hover:text-white transition-colors cursor-pointer">Otimização Extrema FPS Boost</li>
-          </ul>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.84rem', color: '#a0a0b2', fontWeight: 300 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <Shield style={{ width: '16px', height: '16px', color: 'var(--color-neon-red)', flexShrink: 0 }} />
+              <span>Transações 100% Verificadas</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <Terminal style={{ width: '16px', height: '16px', color: 'var(--color-neon-cyan)', flexShrink: 0 }} />
+              <span>Entrega Automatizada & Segura</span>
+            </div>
+            <div style={{ padding: '0.75rem', background: '#121218', border: '1px solid rgba(255,0,60,0.3)', borderRadius: '6px', marginTop: '0.4rem', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#ffffff' }}>
+              🔒 SISTEMA ANTI-QUEDA EM ATIVIDADE
+            </div>
+          </div>
         </div>
 
-        {/* Discord & Support */}
-        <div className="space-y-3">
-          <h4 className="font-mono text-xs text-[#ff003c] uppercase tracking-widest font-bold">
-            // SUPORTE & DISCORD
+        {/* Col 4: Community Call */}
+        <div>
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--color-neon-red)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.25rem' }}>
+            // ATENDIMENTO
           </h4>
-          <p className="text-xs text-gray-400 leading-relaxed font-light">
-            O atendimento humanizado, suporte técnico e a entrega de todos os pedidos ocorrem exclusivamente no nosso Discord.
+          <p style={{ color: '#a0a0b2', fontSize: '0.86rem', lineHeight: 1.6, fontWeight: 300, marginBottom: '1.25rem' }}>
+            Dúvidas no pré-venda ou pós-venda? Abra um ticket em nosso servidor para falar diretamente com nossa equipe gerencial.
           </p>
           <a 
             href={config.globalDiscordUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#14141e] border border-[#ff003c]/60 text-white hover:border-[#ff003c] hover:bg-[#ff003c]/20 text-xs font-mono transition-all w-full justify-center"
+            className="btn-cyber-outline"
+            style={{ padding: '0.65rem 1.25rem', fontSize: '0.78rem', width: '100%' }}
           >
-            <span>ENTRAR NO SERVIDOR VIP</span>
-            <ExternalLink className="w-3.5 h-3.5" />
+            <span>SUPORTE VIA DISCORD</span>
+            <ExternalLink style={{ width: '14px', height: '14px' }} />
           </a>
         </div>
       </div>
 
-      {/* Bottom Copyright Bar */}
-      <div className="max-w-7xl mx-auto pt-8 border-t border-gray-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-gray-500">
-        <div className="flex items-center gap-2">
-          <span>© {new Date().getFullYear()} {config.storeName}. TODOS OS DIREITOS RESERVADOS.</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <span className="flex items-center gap-1 text-gray-400">
-            ENGINE: <strong className="text-white">BLOOD CORE v2.4</strong>
-          </span>
-          <span className="text-[#ff003c]">// CYBERPUNK EDITION</span>
+      <div style={{ maxWidth: '1280px', margin: '3rem auto 0 auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#666677' }}>
+        <div>BLOOD STORE v2.4 // CYBERPUNK EDITION</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span>Desenvolvido com excelência e supremacia gamer</span>
+          <Heart style={{ width: '12px', height: '12px', color: 'var(--color-neon-red)', fill: 'var(--color-neon-red)' }} />
         </div>
       </div>
     </footer>

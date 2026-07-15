@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
-import { Shield, Terminal, Lock, Unlock, Menu, X, Flame, Sparkles, ExternalLink } from 'lucide-react';
+import { Shield, Menu, X, ExternalLink, Sparkles } from 'lucide-react';
 
-interface NavbarProps {
-  onOpenAdminLogin: () => void;
-}
-
-export const Navbar: React.FC<NavbarProps> = ({ onOpenAdminLogin }) => {
-  const { config, isAdminLoggedIn, activeView, setActiveView, logoutAdmin } = useStore();
+export const Navbar: React.FC = () => {
+  const { config, activeView, setActiveView } = useStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleNavClick = (view: 'home' | 'terms' | 'admin') => {
+  const handleNavClick = (view: 'home' | 'terms') => {
     setActiveView(view);
     setMobileMenuOpen(false);
     if (view === 'home') {
@@ -34,69 +30,71 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAdminLogin }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full">
-      {/* Ticker / Announcement Bar */}
+    <header className="navbar-header">
+      {/* Announcement Bar */}
       {config.announcementBanner && (
-        <div className="w-full bg-[#ff003c]/15 border-b border-[#ff003c]/30 py-1.5 px-4 text-center text-xs md:text-sm font-mono text-[#ff003c] font-semibold tracking-wider flex items-center justify-center gap-2 overflow-hidden">
-          <Sparkles className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
-          <span className="truncate">{config.announcementBanner}</span>
-          <Sparkles className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
+        <div style={{ width: '100%', background: 'rgba(255, 0, 60, 0.15)', borderBottom: '1px solid rgba(255, 0, 60, 0.3)', padding: '0.45rem 1rem', textAlign: 'center', fontSize: '0.82rem', fontFamily: 'var(--font-mono)', color: 'var(--color-neon-red)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
+          <img 
+            src="/fotos/videos/a_3b92739a0066d125bf473beccfe5bbb1.gif" 
+            alt="Status" 
+            style={{ width: '16px', height: '16px', objectFit: 'contain', borderRadius: '50%', border: '1px solid var(--color-neon-red)' }}
+          />
+          <span>{config.announcementBanner}</span>
+          <Sparkles style={{ width: '14px', height: '14px' }} />
         </div>
       )}
 
-      {/* Main Header */}
-      <nav className="w-full bg-[#0b0b0b]/90 backdrop-blur-md border-b border-[#ff003c]/30 px-4 md:px-8 py-3.5 flex items-center justify-between">
+      {/* Main Bar */}
+      <nav className="navbar-bar">
         {/* Logo */}
         <div 
           onClick={() => handleNavClick('home')}
-          className="flex items-center gap-2.5 cursor-pointer group select-none"
+          className="navbar-brand"
         >
-          <div className="relative w-10 h-10 bg-[#121218] border border-[#ff003c] flex items-center justify-center neon-glow group-hover:scale-105 transition-transform">
-            <Flame className="w-6 h-6 text-[#ff003c] animate-pulse" />
-            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#ff003c] rounded-full animate-ping" />
+          <div className="navbar-logo-box neon-glow">
+            <img 
+              src="/fotos/Gemini_Generated_Image_v1yi2kv1yi2kv1yi.png" 
+              alt="Blood Crest" 
+            />
           </div>
-          <div className="flex flex-col">
-            <span className="font-extrabold text-xl md:text-2xl font-display tracking-wider text-white group-hover:text-[#ff003c] transition-colors neon-glow-text">
+          <div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#ffffff', letterSpacing: '1px' }}>
               {config.storeName.toUpperCase()}
-            </span>
-            <span className="text-[10px] font-mono text-[#ff003c] tracking-widest -mt-1 uppercase">
+            </div>
+            <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--color-neon-red)', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '-2px' }}>
               // Cyber Gamer Supremacy
-            </span>
+            </div>
           </div>
         </div>
 
         {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-8 font-medium text-sm tracking-wide">
+        <div className="navbar-links">
           <button 
             onClick={() => handleNavClick('home')}
-            className={`transition-colors py-1 relative ${
-              activeView === 'home' ? 'text-[#ff003c] font-semibold' : 'text-gray-300 hover:text-white'
-            }`}
+            style={{ background: 'transparent', border: 'none', color: activeView === 'home' ? 'var(--color-neon-red)' : '#d0d0e0', fontWeight: activeView === 'home' ? 700 : 500, cursor: 'pointer', fontFamily: 'var(--font-main)', fontSize: '0.9rem', position: 'relative', padding: '0.3rem 0' }}
           >
             INÍCIO
             {activeView === 'home' && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#ff003c] neon-glow" />
+              <span style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '2px', background: 'var(--color-neon-red)' }} className="neon-glow" />
             )}
           </button>
 
           <a 
             href="#produtos"
             onClick={handleScrollToProducts}
-            className="text-gray-300 hover:text-[#ff003c] transition-colors py-1 cursor-pointer"
+            style={{ color: '#d0d0e0', textDecoration: 'none', fontWeight: 500, fontSize: '0.9rem' }}
           >
             PRODUTOS
           </a>
 
           <button 
             onClick={() => handleNavClick('terms')}
-            className={`transition-colors py-1 relative flex items-center gap-1.5 ${
-              activeView === 'terms' ? 'text-[#ff003c] font-semibold' : 'text-gray-300 hover:text-white'
-            }`}
+            style={{ background: 'transparent', border: 'none', color: activeView === 'terms' ? 'var(--color-neon-red)' : '#d0d0e0', fontWeight: activeView === 'terms' ? 700 : 500, cursor: 'pointer', fontFamily: 'var(--font-main)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', position: 'relative', padding: '0.3rem 0' }}
           >
-            <Shield className="w-4 h-4 text-[#ff003c]" />
+            <Shield style={{ width: '15px', height: '15px', color: 'var(--color-neon-red)' }} />
             TERMOS E CONDIÇÕES
             {activeView === 'terms' && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#ff003c] neon-glow" />
+              <span style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '2px', background: 'var(--color-neon-red)' }} className="neon-glow" />
             )}
           </button>
 
@@ -104,150 +102,74 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAdminLogin }) => {
             href={config.globalDiscordUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-300 hover:text-[#00f0ff] transition-colors flex items-center gap-1 py-1"
+            style={{ color: '#d0d0e0', textDecoration: 'none', fontWeight: 500, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
           >
             <span>DISCORD VIP</span>
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink style={{ width: '14px', height: '14px' }} />
           </a>
         </div>
 
-        {/* Admin & Action Buttons */}
-        <div className="hidden md:flex items-center gap-3">
-          {isAdminLoggedIn ? (
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => handleNavClick('admin')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-none font-mono text-xs border transition-all ${
-                  activeView === 'admin' 
-                    ? 'bg-[#ff003c] text-white border-[#ff003c] neon-glow' 
-                    : 'bg-[#14141e] text-[#00f0ff] border-[#00f0ff]/50 hover:border-[#00f0ff]'
-                }`}
-              >
-                <Terminal className="w-3.5 h-3.5 animate-pulse" />
-                <span>PAINEL ADMIN</span>
-              </button>
-              <button 
-                onClick={logoutAdmin}
-                title="Sair do modo Admin"
-                className="p-1.5 bg-[#191922] border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors"
-              >
-                <Lock className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <button 
-              onClick={onOpenAdminLogin}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#121218] border border-[#ff003c]/40 text-gray-300 hover:text-white hover:border-[#ff003c] text-xs font-mono tracking-wider transition-all"
-            >
-              <Unlock className="w-3.5 h-3.5 text-[#ff003c]" />
-              <span>ADMIN</span>
-            </button>
-          )}
-
+        {/* Desktop CTA */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }} className="hidden md:flex">
           <a 
             href={config.globalDiscordUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-cyber text-xs py-2 px-4"
+            className="btn-cyber"
+            style={{ padding: '0.65rem 1.4rem', fontSize: '0.8rem' }}
           >
             <span>ENTRAR NO DISCORD</span>
           </a>
         </div>
 
-        {/* Mobile Hamburger Button */}
+        {/* Mobile Toggle Button */}
         <button 
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 border border-[#ff003c]/50 text-[#ff003c] bg-[#121218] hover:bg-[#ff003c]/10 transition-colors"
+          className="md:hidden"
+          style={{ padding: '0.5rem', background: '#121218', border: '1px solid rgba(255,0,60,0.5)', color: 'var(--color-neon-red)', cursor: 'pointer', display: 'block' }}
           aria-label="Toggle Navigation"
         >
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {mobileMenuOpen ? <X style={{ width: '24px', height: '24px' }} /> : <Menu style={{ width: '24px', height: '24px' }} />}
         </button>
       </nav>
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#121218]/95 backdrop-blur-xl border-b border-[#ff003c]/50 px-5 py-6 flex flex-col gap-4 animate-fadeIn shadow-2xl">
+        <div style={{ background: 'rgba(18,18,24,0.98)', borderBottom: '1px solid var(--color-neon-red)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }} className="md:hidden">
           <button 
             onClick={() => handleNavClick('home')}
-            className={`text-left text-base font-semibold py-2 border-b border-gray-800 flex items-center justify-between ${
-              activeView === 'home' ? 'text-[#ff003c]' : 'text-gray-200'
-            }`}
+            style={{ background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem', textAlign: 'left', color: activeView === 'home' ? 'var(--color-neon-red)' : '#ffffff', fontWeight: 700, fontSize: '1rem', display: 'flex', justifyContent: 'space-between' }}
           >
             <span>INÍCIO</span>
-            <span className="font-mono text-xs text-[#ff003c]">// 01</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-neon-red)' }}>// 01</span>
           </button>
 
           <a 
             href="#produtos"
             onClick={handleScrollToProducts}
-            className="text-left text-base font-semibold py-2 border-b border-gray-800 text-gray-200 flex items-center justify-between"
+            style={{ textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem', color: '#ffffff', fontWeight: 700, fontSize: '1rem', display: 'flex', justifyContent: 'space-between' }}
           >
             <span>PRODUTOS DA LOJA</span>
-            <span className="font-mono text-xs text-[#ff003c]">// 02</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-neon-red)' }}>// 02</span>
           </a>
 
           <button 
             onClick={() => handleNavClick('terms')}
-            className={`text-left text-base font-semibold py-2 border-b border-gray-800 flex items-center justify-between ${
-              activeView === 'terms' ? 'text-[#ff003c]' : 'text-gray-200'
-            }`}
+            style={{ background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem', textAlign: 'left', color: activeView === 'terms' ? 'var(--color-neon-red)' : '#ffffff', fontWeight: 700, fontSize: '1rem', display: 'flex', justifyContent: 'space-between' }}
           >
-            <span className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-[#ff003c]" />
-              TERMOS E CONDIÇÕES
-            </span>
-            <span className="font-mono text-xs text-[#ff003c]">// 03</span>
+            <span>TERMOS E CONDIÇÕES</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-neon-red)' }}>// 03</span>
           </button>
 
           <a 
             href={config.globalDiscordUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-left text-base font-semibold py-2 border-b border-gray-800 text-[#00f0ff] flex items-center justify-between"
+            style={{ textDecoration: 'none', color: 'var(--color-neon-cyan)', fontWeight: 700, fontSize: '1rem', display: 'flex', justifyContent: 'space-between', paddingBottom: '0.5rem' }}
           >
             <span>DISCORD OFICIAL</span>
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink style={{ width: '16px', height: '16px' }} />
           </a>
-
-          <div className="pt-3 flex flex-col gap-2.5">
-            <a 
-              href={config.globalDiscordUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-cyber w-full py-3 text-center text-sm"
-            >
-              COMPRAR VIA DISCORD
-            </a>
-
-            {isAdminLoggedIn ? (
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleNavClick('admin')}
-                  className="flex-1 py-2.5 bg-[#ff003c] text-white font-mono text-xs font-bold border border-[#ff003c] neon-glow flex items-center justify-center gap-2"
-                >
-                  <Terminal className="w-4 h-4" />
-                  PAINEL ADMIN
-                </button>
-                <button 
-                  onClick={logoutAdmin}
-                  className="px-4 py-2.5 bg-red-950/50 border border-red-500 text-red-300 font-mono text-xs"
-                >
-                  SAIR
-                </button>
-              </div>
-            ) : (
-              <button 
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenAdminLogin();
-                }}
-                className="w-full py-2.5 bg-[#191922] border border-[#ff003c]/40 text-gray-300 font-mono text-xs flex items-center justify-center gap-2"
-              >
-                <Unlock className="w-4 h-4 text-[#ff003c]" />
-                ACESSO ADMINISTRADOR
-              </button>
-            )}
-          </div>
         </div>
       )}
     </header>

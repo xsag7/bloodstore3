@@ -4,7 +4,8 @@ import { OverviewView } from './OverviewView';
 import { ProductsView } from './ProductsView';
 import { TermsView } from './TermsView';
 import { SettingsView } from './SettingsView';
-import { Terminal, ShoppingBag, ShieldCheck, Settings, LogOut, Activity, ExternalLink } from 'lucide-react';
+import { SecurityView } from './SecurityView';
+import { Terminal, ShoppingBag, ShieldCheck, Settings, LogOut, Activity, ExternalLink, ShieldAlert } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const { adminTab, setAdminTab, logoutAdmin, setActiveView } = useStore();
@@ -100,6 +101,18 @@ export const AdminDashboard: React.FC = () => {
           <Settings className="w-4 h-4" />
           <span>Configurações Globais</span>
         </button>
+
+        <button
+          onClick={() => setAdminTab('security')}
+          className={`px-4 sm:px-6 py-3 font-mono text-xs sm:text-sm font-bold uppercase transition-all flex items-center gap-2 border-b-2 whitespace-nowrap ${
+            adminTab === 'security'
+              ? 'text-red-500 border-red-500 bg-red-950/20'
+              : 'text-red-400 border-transparent hover:text-red-300 hover:bg-red-950/10'
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4 text-red-400" />
+          <span>Auditoria & Segurança</span>
+        </button>
       </div>
 
       {/* Tab Content Render */}
@@ -108,6 +121,7 @@ export const AdminDashboard: React.FC = () => {
         {adminTab === 'products' && <ProductsView />}
         {adminTab === 'terms' && <TermsView />}
         {adminTab === 'settings' && <SettingsView />}
+        {adminTab === 'security' && <SecurityView />}
       </div>
     </section>
   );

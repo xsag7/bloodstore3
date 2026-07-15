@@ -14,124 +14,157 @@ export const Hero: React.FC = () => {
   };
 
   return (
-    <section className="relative w-full pt-10 pb-20 px-4 md:px-8 max-w-7xl mx-auto overflow-hidden">
-      {/* Background Cyber Decorations */}
-      <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-full max-w-4xl h-72 bg-[#ff003c]/10 blur-[120px] pointer-events-none rounded-full" />
+    <section className="hero-section">
+      {/* Background Cyber Video & Overlay */}
+      <div className="hero-video-bg">
+        <video autoPlay loop muted playsInline>
+          <source src="/fotos/videos/animation.mp4" type="video/mp4" />
+        </video>
+        <div className="hero-video-overlay" />
+      </div>
+
+      {/* Decorative Ambient Glow */}
+      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '80%', maxWidth: '900px', height: '280px', background: 'rgba(255, 0, 60, 0.16)', filter: 'blur(130px)', pointerEvents: 'none', borderRadius: '50%' }} />
       
-      <div className="relative z-10 flex flex-col items-center text-center">
-        {/* Status Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#12121a] border border-[#ff003c]/50 rounded-none mb-6 font-mono text-xs text-gray-300 neon-border animate-float">
-          <span className="w-2 h-2 rounded-full bg-[#ff003c] animate-ping" />
-          <span className="text-[#ff003c] font-bold">BLOOD SYSTEM v2.4</span>
-          <span className="text-gray-500">//</span>
-          <span className="text-white font-medium">SERVIDORES 100% ONLINE</span>
-          <Activity className="w-3.5 h-3.5 text-[#ff003c] ml-1" />
+      <div className="hero-content">
+        {/* Status Pill Badge with Animated GIF */}
+        <div className="status-pill animate-float">
+          <img 
+            src="/fotos/videos/a_3b92739a0066d125bf473beccfe5bbb1.gif" 
+            alt="Pulse" 
+            style={{ width: '16px', height: '16px', objectFit: 'contain' }}
+          />
+          <span style={{ color: 'var(--color-neon-red)', fontWeight: 700 }}>BLOOD SYSTEM v2.4</span>
+          <span style={{ color: '#666677' }}>//</span>
+          <span>SERVIDORES 100% ONLINE & BLINDADOS</span>
+          <Activity style={{ width: '14px', height: '14px', color: 'var(--color-neon-red)', marginLeft: '4px' }} />
         </div>
 
-        {/* Impact Headline */}
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-black font-display tracking-tight text-white uppercase max-w-5xl leading-none mb-6">
+        {/* Brand Crest Circle */}
+        <div className="brand-crest-box">
+          <div className="brand-crest-circle neon-glow">
+            <img 
+              src="/fotos/Gemini_Generated_Image_v1yi2kv1yi2kv1yi (1).png" 
+              alt="Blood Store Official Crest" 
+            />
+          </div>
+          <div className="brand-crest-badge">
+            VIP STORE
+          </div>
+        </div>
+
+        {/* Perfectly Spaced Title */}
+        <h1 className="hero-title">
           {config.bannerTitle.split(' ').map((word, i) => (
-            <span key={i} className={word.toLowerCase().includes('supremacia') || word.toLowerCase().includes('gamer') || i % 3 === 1 ? 'text-[#ff003c] neon-glow-text inline-block mx-1' : 'inline-block mx-1'}>
+            <span 
+              key={i} 
+              className={`word-item ${
+                word.toLowerCase().includes('supremacia') || word.toLowerCase().includes('gamer') || i % 3 === 1 
+                  ? 'neon-glow-text' 
+                  : ''
+              }`}
+              style={{ color: word.toLowerCase().includes('supremacia') || word.toLowerCase().includes('gamer') || i % 3 === 1 ? 'var(--color-neon-red)' : '#ffffff' }}
+            >
               {word}
             </span>
           ))}
         </h1>
 
         {/* Subtitle */}
-        <p className="text-base sm:text-xl text-gray-300 max-w-3xl mb-10 font-light leading-relaxed">
+        <p className="hero-subtitle">
           {config.bannerSubtitle}
         </p>
 
-        {/* Feature Badges Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 w-full max-w-4xl mb-12">
-          <div className="hud-card p-3 flex items-center gap-3 text-left">
-            <div className="p-2 bg-[#ff003c]/15 text-[#ff003c] border border-[#ff003c]/40">
-              <Zap className="w-5 h-5" />
+        {/* 4 Feature Badges Grid */}
+        <div className="hero-badges-grid">
+          <div className="badge-card hud-card">
+            <div className="badge-icon">
+              <Zap style={{ width: '22px', height: '22px' }} />
             </div>
             <div>
-              <div className="font-mono text-xs text-gray-400 uppercase">Entrega Rápida</div>
-              <div className="font-bold text-sm text-white">Em até 24 Horas</div>
+              <div className="badge-text-label">Entrega Rápida</div>
+              <div className="badge-text-value">Em até 24 Horas</div>
             </div>
           </div>
 
-          <div className="hud-card p-3 flex items-center gap-3 text-left">
-            <div className="p-2 bg-[#ff003c]/15 text-[#ff003c] border border-[#ff003c]/40">
-              <ShieldCheck className="w-5 h-5" />
+          <div className="badge-card hud-card">
+            <div className="badge-icon">
+              <ShieldCheck style={{ width: '22px', height: '22px' }} />
             </div>
             <div>
-              <div className="font-mono text-xs text-gray-400 uppercase">Segurança Total</div>
-              <div className="font-bold text-sm text-white">Contas & Itens Reais</div>
+              <div className="badge-text-label">Segurança Total</div>
+              <div className="badge-text-value">Contas & Itens Reais</div>
             </div>
           </div>
 
-          <div className="hud-card p-3 flex items-center gap-3 text-left">
-            <div className="p-2 bg-[#ff003c]/15 text-[#ff003c] border border-[#ff003c]/40">
-              <Clock className="w-5 h-5" />
+          <div className="badge-card hud-card">
+            <div className="badge-icon">
+              <Clock style={{ width: '22px', height: '22px' }} />
             </div>
             <div>
-              <div className="font-mono text-xs text-gray-400 uppercase">Atendimento VIP</div>
-              <div className="font-bold text-sm text-white">Fura-fila Booster</div>
+              <div className="badge-text-label">Atendimento VIP</div>
+              <div className="badge-text-value">Fura-fila Booster</div>
             </div>
           </div>
 
-          <div className="hud-card p-3 flex items-center gap-3 text-left">
-            <div className="p-2 bg-[#ff003c]/15 text-[#ff003c] border border-[#ff003c]/40">
-              <Sparkles className="w-5 h-5" />
+          <div className="badge-card hud-card">
+            <div className="badge-icon">
+              <Sparkles style={{ width: '22px', height: '22px' }} />
             </div>
             <div>
-              <div className="font-mono text-xs text-gray-400 uppercase">Forma de Pagamento</div>
-              <div className="font-bold text-sm text-[#ff003c]">PIX Instantâneo</div>
+              <div className="badge-text-label">Forma de Pagamento</div>
+              <div className="badge-text-value" style={{ color: 'var(--color-neon-red)' }}>PIX Instantâneo</div>
             </div>
           </div>
         </div>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-5 w-full max-w-md">
+        {/* Centered CTA Buttons */}
+        <div className="hero-cta-group">
           <a 
             href="#produtos"
             onClick={handleScrollToProducts}
-            className="btn-cyber w-full sm:w-auto text-base py-4 px-8 animate-pulse-glow"
+            className="btn-cyber animate-pulse-glow"
           >
             <span>VER PRODUTOS</span>
-            <ArrowDown className="w-5 h-5 animate-bounce" />
+            <ArrowDown style={{ width: '18px', height: '18px' }} />
           </a>
 
           <a 
             href={config.globalDiscordUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-cyber-outline w-full sm:w-auto text-base py-4 px-8"
+            className="btn-cyber-outline"
           >
             <span>COMUNIDADE DISCORD</span>
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink style={{ width: '16px', height: '16px' }} />
           </a>
         </div>
 
-        {/* Stats Counter Bar */}
-        <div className="mt-16 pt-8 border-t border-gray-800/80 grid grid-cols-2 md:grid-cols-4 gap-8 w-full max-w-4xl text-center">
+        {/* Centered 4-Column Stats Grid */}
+        <div className="stats-grid">
           <div>
-            <div className="text-2xl md:text-3xl font-black font-mono text-white tracking-wider">
+            <div className="stat-number">
               +{config.stats.totalSales.toLocaleString()}
             </div>
-            <div className="text-xs font-mono text-gray-400 mt-1 uppercase tracking-widest">// Vendas Concluídas</div>
+            <div className="stat-label">// Vendas Concluídas</div>
           </div>
           <div>
-            <div className="text-2xl md:text-3xl font-black font-mono text-[#ff003c] tracking-wider">
+            <div className="stat-number" style={{ color: 'var(--color-neon-red)' }}>
               +{config.stats.activeUsers.toLocaleString()}
             </div>
-            <div className="text-xs font-mono text-gray-400 mt-1 uppercase tracking-widest">// Membros Ativos</div>
+            <div className="stat-label">// Membros Ativos</div>
           </div>
           <div>
-            <div className="text-2xl md:text-3xl font-black font-mono text-white tracking-wider">
+            <div className="stat-number">
               {config.stats.satisfactionRate}
             </div>
-            <div className="text-xs font-mono text-gray-400 mt-1 uppercase tracking-widest">// Satisfação Real</div>
+            <div className="stat-label">// Satisfação Real</div>
           </div>
           <div>
-            <div className="text-2xl md:text-3xl font-black font-mono text-[#00f0ff] tracking-wider">
+            <div className="stat-number" style={{ color: 'var(--color-neon-cyan)' }}>
               ~{config.stats.averageDelivery}
             </div>
-            <div className="text-xs font-mono text-gray-400 mt-1 uppercase tracking-widest">// Tempo de Resposta</div>
+            <div className="stat-label">// Tempo de Resposta</div>
           </div>
         </div>
       </div>

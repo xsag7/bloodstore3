@@ -1,63 +1,75 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
-import { ExternalLink, Users, ShieldCheck, Zap, Sparkles } from 'lucide-react';
+import { ExternalLink, Users, ShieldCheck, Zap } from 'lucide-react';
 
 export const DiscordBanner: React.FC = () => {
   const { config } = useStore();
 
   return (
-    <section className="py-16 px-4 md:px-8 max-w-7xl mx-auto relative z-10">
-      <div className="hud-card p-8 sm:p-14 bg-gradient-to-r from-[#141016] via-[#1c1218] to-[#141016] border-2 border-[#ff003c] neon-glow-lg overflow-hidden relative">
-        {/* Ambient Glows */}
-        <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-[#ff003c]/20 blur-[100px] rounded-full pointer-events-none" />
-        <div className="absolute -left-20 -top-20 w-80 h-80 bg-[#ff003c]/15 blur-[100px] rounded-full pointer-events-none" />
+    <section className="container-main">
+      <div className="discord-banner-box neon-glow-lg">
+        {/* Background Ambient Glow */}
+        <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '300px', height: '300px', background: 'rgba(255, 0, 60, 0.2)', filter: 'blur(100px)', borderRadius: '50%', pointerEvents: 'none' }} />
 
-        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
-          <div className="space-y-4 max-w-2xl text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#ff003c]/20 border border-[#ff003c] font-mono text-xs text-[#ff003c] tracking-widest uppercase">
-              <Sparkles className="w-3.5 h-3.5 animate-spin" />
-              <span>// COMUNIDADE OFICIAL GAMER //</span>
-            </div>
-
-            <h2 className="text-3xl sm:text-5xl font-black font-display text-white tracking-tight uppercase leading-none">
-              JUNTE-SE AO COMANDO <span className="text-[#ff003c] neon-glow-text">BLOOD STORE</span> NO DISCORD
-            </h2>
-
-            <p className="text-gray-300 text-sm sm:text-base font-light leading-relaxed">
-              Nosso servidor é a base central de todas as operações, suporte em tempo real, entregas garantidas, sorteios exclusivos e atendimento prioritário para Boosters e clientes VIP.
-            </p>
-
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-              <div className="flex items-center gap-2 text-xs font-mono text-gray-300 bg-[#0b0b0b]/80 px-3 py-2 border border-gray-800">
-                <Users className="w-4 h-4 text-[#00f0ff]" />
-                <span>Atendimento Humanizado</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs font-mono text-gray-300 bg-[#0b0b0b]/80 px-3 py-2 border border-gray-800">
-                <Zap className="w-4 h-4 text-[#ff003c]" />
-                <span>Fila VIP p/ Boosters</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs font-mono text-gray-300 bg-[#0b0b0b]/80 px-3 py-2 border border-gray-800">
-                <ShieldCheck className="w-4 h-4 text-green-400" />
-                <span>Canal de Avaliações Reais</span>
-              </div>
-            </div>
+        {/* Left Content */}
+        <div style={{ maxWidth: '600px', zIndex: 10 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '0.35rem 0.9rem', background: 'rgba(255, 0, 60, 0.15)', border: '1px solid var(--color-neon-red)', color: 'var(--color-neon-red)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1.2rem' }}>
+            <img 
+              src="/fotos/videos/a_3b92739a0066d125bf473beccfe5bbb1.gif" 
+              alt="Pulse" 
+              style={{ width: '14px', height: '14px', objectFit: 'contain' }}
+            />
+            <span>// COMUNIDADE DISCORD BLINDADA</span>
           </div>
 
-          <div className="flex flex-col items-center gap-4 w-full sm:w-auto">
-            <a 
-              href={config.globalDiscordUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-cyber w-full sm:w-80 py-5 text-base text-center animate-pulse-glow flex items-center justify-center gap-3"
-            >
-              <span>ACESSAR SERVIDOR AGORA</span>
-              <ExternalLink className="w-5 h-5" />
-            </a>
+          <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#ffffff', textTransform: 'uppercase', lineHeight: 1.15, marginBottom: '1rem' }}>
+            JUNTE-SE À ELITE DA <span style={{ color: 'var(--color-neon-red)' }} className="neon-glow-text">{config.storeName}</span>
+          </h2>
 
-            <span className="font-mono text-xs text-gray-400">
-              Link de Convite: <strong className="text-[#ff003c]">discord.gg/Gvbg5WYPBP</strong>
-            </span>
+          <p style={{ color: '#c0c0d0', fontSize: '1rem', fontWeight: 300, lineHeight: 1.6, marginBottom: '1.8rem' }}>
+            Entre agora no nosso Discord oficial para retirar seus produtos, participar de sorteios exclusivos de contas/infoprodutos e conversar com milhares de membros ativos todos os dias.
+          </p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#e0e0e0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Users style={{ width: '18px', height: '18px', color: 'var(--color-neon-red)' }} />
+              <span>+{config.stats.activeUsers.toLocaleString()} Membros Ativos</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShieldCheck style={{ width: '18px', height: '18px', color: 'var(--color-neon-cyan)' }} />
+              <span>Suporte Anti-Quedas</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Zap style={{ width: '18px', height: '18px', color: '#ffee00' }} />
+              <span>Entrega Imediata no Ticket</span>
+            </div>
           </div>
+        </div>
+
+        {/* Right CTA */}
+        <div style={{ zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center' }}>
+          <div style={{ width: '90px', height: '90px', borderRadius: '50%', border: '2px solid var(--color-neon-red)', overflow: 'hidden', background: '#121218', boxShadow: '0 0 20px rgba(255,0,60,0.5)' }}>
+            <img 
+              src="/fotos/Gemini_Generated_Image_v1yi2kv1yi2kv1yi.png" 
+              alt="Crest" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          </div>
+
+          <a 
+            href={config.globalDiscordUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-cyber animate-pulse-glow"
+            style={{ padding: '1rem 2.2rem', fontSize: '1rem', whiteSpace: 'nowrap' }}
+          >
+            <span>ENTRAR NO SERVIDOR VIP</span>
+            <ExternalLink style={{ width: '18px', height: '18px' }} />
+          </a>
+
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#888899', textTransform: 'uppercase' }}>
+            ⚡ Acesso Imediato & Gratuito
+          </span>
         </div>
       </div>
     </section>
