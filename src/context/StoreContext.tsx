@@ -54,9 +54,9 @@ const DEFAULT_COUPONS: Coupon[] = [
 
 const DEFAULT_CONFIG: StoreConfig = {
   storeName: 'Blood Store',
-  bannerTitle: 'EXCELÊNCIA EM INFOPRODUTOS & SERVIÇOS',
-  bannerSubtitle: 'Produtos digitais, otimizações e contas exclusivas com entrega rápida via Discord e garantia total.',
-  announcementBanner: '⚡ BLOOD NOTICIA: ENTREGA EM ATÉ 24H VIA DISCORD // PAGAMENTO VIA PIX // ATENDIMENTO PRIORITÁRIO PARA BOOSTERS ⚡',
+  bannerTitle: 'EXCELÊNCIA EM SOLUÇÕES DIGITAIS & LICENÇAS',
+  bannerSubtitle: 'Catálogo oficial de ativos digitais, licenças verificadas, otimização de sistemas e contas com garantia de autenticidade e entrega imediata.',
+  announcementBanner: '',
   globalDiscordUrl: 'https://discord.gg/Gvbg5WYPBP',
   discordWebhookUrl: 'https://discord.com/api/webhooks/1527312578898956409/u0DEYy-liGUA9w-e6fHjwlHNPDQmPzXoPR5lu5_jUGhcGheslAmBY2YDWOQF7k58O3Xm',
   pixKey: '14f35f4f-9255-496b-bd0e-2fce7d60af92',
@@ -73,131 +73,131 @@ const DEFAULT_CONFIG: StoreConfig = {
 const DEFAULT_PRODUCTS: Product[] = [
   {
     id: 'prod-1',
-    slug: 'robux-r0b6x',
-    name: 'Pacotes Robux (r0b6x) Premium',
+    slug: 'pacotes-moedas-virtuais',
+    name: 'Pacotes de Moedas Virtuais Premium',
     tag: 'ROBLOX',
     price: 35.90,
     originalPrice: 49.90,
-    description: 'Pacotes seguros de Robux para sua conta Roblox com o melhor custo-benefício do mercado e entrega sem taxas extras pelo sistema de gamepass.',
+    description: 'Créditos virtuais seguros para sua conta com o melhor custo-benefício do mercado e entrega limpa com garantia de conformidade.',
     features: [
-      'Entrega 100% limpa via Gamepass/Grupo',
-      'Taxa de 30% coberta pela loja ou bônus',
-      'Suporte humanizado no Discord',
-      'Garantia anti-banimento do sistema'
+      'Entrega oficial via sistema corporativo',
+      'Taxas administrativas totalmente cobertas',
+      'Atendimento técnico no portal oficial',
+      'Garantia integral de autenticidade do ativo'
     ],
     imageUrl: 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?q=80&w=800&auto=format&fit=crop',
-    badge: 'MAIS VENDIDO',
+    badge: 'DESTAQUE',
     status: 'DISPONÍVEL',
     stockItems: [
-      'Robux-Pass #1049 - Código de Ativação / Acesso: RBX-9988-1122',
-      'Robux-Pass #1050 - Código de Ativação / Acesso: RBX-7766-3344',
-      'Robux-Pass #1051 - Código de Ativação / Acesso: RBX-5544-2211'
+      'Licença Ativação #1049 - Código de Acesso: CFG-9988-1122',
+      'Licença Ativação #1050 - Código de Acesso: CFG-7766-3344',
+      'Licença Ativação #1051 - Código de Acesso: CFG-5544-2211'
     ]
   },
   {
     id: 'prod-2',
-    slug: 'conta-18v-c0nta-18v',
-    name: 'Conta Verificada 18+ (c0nta-18v)',
+    slug: 'conta-verificada-acesso-completo',
+    name: 'Conta Verificada • Acesso Completo',
     tag: 'CONTAS',
     price: 24.99,
     originalPrice: 39.99,
-    description: 'Contas verificadas com verificação de idade +18 aprovada no Roblox/Discord. Perfeitas para voice chat, acesso a servidores adultos e total exclusividade.',
+    description: 'Contas verificadas com autenticação aprovada no sistema. Perfeitas para comunicação por voz, desenvolvimento de comunidades e total exclusividade.',
     features: [
-      'Voice Chat (Áudio) habilitado imediato',
-      'Dados de recuperação alteráveis pelo comprador',
-      'Sem histórico de punições no sistema',
-      'Acesso total (Full Acesso - FA)'
+      'Recurso de áudio e comunicação habilitados',
+      'Dados de recuperação integralmente transferíveis',
+      'Sem histórico de penalidades administrativas',
+      'Acesso completo integral (Full Access)'
     ],
     imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop',
     badge: 'ENTREGA IMEDIATA',
     status: 'DISPONÍVEL',
     stockItems: [
-      'Login: blood_acc18_01 | Senha: pass#18v_alpha | E-mail: rec1@bloodstore.gg',
-      'Login: blood_acc18_02 | Senha: pass#18v_beta | E-mail: rec2@bloodstore.gg',
-      'Login: blood_acc18_03 | Senha: pass#18v_gamma | E-mail: rec3@bloodstore.gg'
+      'Login: acc_verified_01 | Senha: pass#alpha | E-mail: rec1@bloodstore.gg',
+      'Login: acc_verified_02 | Senha: pass#beta | E-mail: rec2@bloodstore.gg',
+      'Login: acc_verified_03 | Senha: pass#gamma | E-mail: rec3@bloodstore.gg'
     ]
   },
   {
     id: 'prod-3',
-    slug: 'jogos-steam-j0g0s-st34m',
-    name: 'Chaves & Contas - Jogos Steam (j0g0s-st34m)',
-    tag: 'STEAM',
+    slug: 'licencas-digitais-steam',
+    name: 'Chaves de Ativação CD-Key Global',
+    tag: 'LICENÇAS',
     price: 49.90,
     originalPrice: 89.90,
-    description: 'Chaves originais CD-Key e contas Full Acesso com jogos triplo A da Steam (GTA V, Elden Ring, Cyberpunk 2077, Rust, etc.) por uma fração do preço da loja oficial.',
+    description: 'Chaves originais de ativação global e contas de acesso com licenças digitais autênticas para expansão da sua biblioteca de software.',
     features: [
-      'Chave global ativa em qualquer região do mundo',
-      'Jogos originais e permanentes na sua biblioteca',
-      'Opção de contas smurf/competitivas prontas para CS2',
-      'Entrega garantida no mesmo dia via ticket'
+      'Ativação global compatível com todas as regiões',
+      'Ativos digitais permanentes e autenticados',
+      'Suporte técnico à ativação assistida',
+      'Disponibilização imediata após validação'
     ],
     imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop',
     badge: 'PROMOÇÃO',
     status: 'PROMOÇÃO',
     stockItems: [
-      'CD-KEY Steam Global: 88XX-99YY-11ZZ-BLOOD',
-      'CD-KEY Steam Global: 77AA-33BB-55CC-BLOOD'
+      'CD-KEY Global Autenticada: 88XX-99YY-11ZZ-LIC',
+      'CD-KEY Global Autenticada: 77AA-33BB-55CC-LIC'
     ]
   },
   {
     id: 'prod-4',
-    slug: 'murder-mystery-murd3r-myst3ry',
-    name: 'Godlys & Itens Raros - Murder Mystery 2 (MM2)',
-    tag: 'ROBLOX MM2',
+    slug: 'itens-virtuais-colecionador',
+    name: 'Itens Virtuais Raros de Colecionador',
+    tag: 'ITENS RAROS',
     price: 15.00,
     originalPrice: 25.00,
-    description: 'As facas, armas e pacotes Godly mais raros, Chroma e exclusivos do Murder Mystery 2 no Roblox. Domine todas as partidas com skins lendárias e visuais insanos.',
+    description: 'Coleção de ativos digitais exclusivos, raridades e pacotes de colecionador com transferência direta e segura via plataforma.',
     features: [
-      'Chroma Weapons, Corrupt, Icebreaker e muito mais',
-      'Entrega express via Trade direta no jogo',
-      'Combos especiais com descontos progressivos',
-      'Segurança total nas negociações pelo nosso servidor'
+      'Itens raros catalogados com verificação de origem',
+      'Transferência monitorada por analista do portal',
+      'Combos corporativos com descontos progressivos',
+      'Segurança total em todas as transações'
     ],
     imageUrl: 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=800&auto=format&fit=crop',
     badge: 'EM ALTA',
     status: 'DISPONÍVEL',
     stockItems: [
-      'Voucher Trade MM2 #01 - Entrar em contato com bot de trade @BloodTradeBot com código MM2-ALPHA'
+      'Voucher Colecionador #01 - Validar com o terminal de atendimento para transferência imediata'
     ]
   },
   {
     id: 'prod-5',
-    slug: 'minecraft-m1n3cr4ft',
-    name: 'Minecraft Full Acesso + Capas (m1n3cr4ft)',
-    tag: 'MINECRAFT',
+    slug: 'licenca-completa-software',
+    name: 'Licença de Software • Acesso Integral',
+    tag: 'SOFTWARE',
     price: 39.90,
     originalPrice: 75.00,
-    description: 'Contas originais Microsoft Minecraft Java & Bedrock Edition (Full Acesso). Altere email, senha, nick e skin na hora. Opções com capas raras da Optifine ou Migração!',
+    description: 'Contas originais microsoft com acesso total a servidores. Altere e-mail, senha e credenciais com autonomia e garantia vitalícia de funcionamento.',
     features: [
-      'Acesso completo a servidores premium (Hypixel, 2b2t)',
-      'Troca total de email e senha para os seus dados',
-      'Inclui Java Edition e Bedrock Edition simultâneos',
-      'Garantia vitalícia contra quedas'
+      'Acesso irrestrito a todos os recursos da plataforma',
+      'Transferência definitiva de e-mail e credenciais',
+      'Garantia corporativa de conformidade e uso',
+      'Suporte técnico contínuo pela equipe de atendimento'
     ],
     imageUrl: 'https://images.unsplash.com/photo-1627856013091-fed6e4e30025?q=80&w=800&auto=format&fit=crop',
-    badge: 'MAIS VENDIDO',
+    badge: 'DESTAQUE',
     status: 'DISPONÍVEL',
     stockItems: [
-      'Conta Microsoft MC #1 | Email: mc_alpha@outlook.com | Senha: Mc#Blood2026',
-      'Conta Microsoft MC #2 | Email: mc_beta@outlook.com | Senha: Mc#Blood2026'
+      'Licença Oficial #1 | Email: lic_alpha@outlook.com | Senha: Sys#Auth2026',
+      'Licença Oficial #2 | Email: lic_beta@outlook.com | Senha: Sys#Auth2026'
     ]
   },
   {
     id: 'prod-6',
-    slug: 'otimizacao-pc-ot1miz4ç40',
-    name: 'Otimização Extrema de PC - FPS Boost (ot1miz4ç40)',
+    slug: 'otimizacao-sistema-computacional',
+    name: 'Otimização e Sintonização de Sistema',
     tag: 'SERVIÇOS',
     price: 59.90,
     originalPrice: 120.00,
-    description: 'Serviço profissional de otimização remota com nosso especialista técnico. Tweaks no registro do Windows, limpeza profunda de latência, overclock seguro e remoção de input lag.',
+    description: 'Serviço profissional de otimização remota conduzido por analista técnico. Ajustes no registro do Windows, eliminação de latência de rede e ganho de estabilidade.',
     features: [
-      'Ganho real de até +120 FPS em jogos competitivos',
-      'Redução drástica do Input Delay e Ping de rede',
-      'Sessão remota via AnyDesk/TeamViewer no Discord',
-      'Otimização personalizada para seu hardware específico'
+      'Ganho substancial de estabilidade e taxa de quadros',
+      'Redução do tempo de resposta e otimização de rede',
+      'Atendimento remoto assistido agendado no portal',
+      'Sintonização sob medida para as especificações do hardware'
     ],
     imageUrl: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=800&auto=format&fit=crop',
-    badge: 'EXCLUSIVO',
+    badge: 'ESPECIALIZADO',
     status: 'DISPONÍVEL',
     stockItems: [
       'Voucher Agendamento Técnico #01 - Acesse o canal #agendar-boost no Discord com o código BOOST-01'
