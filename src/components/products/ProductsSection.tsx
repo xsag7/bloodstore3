@@ -3,7 +3,7 @@ import { useStore } from '../../context/StoreContext';
 import { ProductCard } from './ProductCard';
 import { ProductModal } from './ProductModal';
 import type { Product } from '../../types/store';
-import { Search, Terminal, ShoppingBag } from 'lucide-react';
+import { Search, Sparkles, ShoppingBag } from 'lucide-react';
 
 export const ProductsSection: React.FC = () => {
   const { products, searchQuery, setSearchQuery, selectedTag, setSelectedTag } = useStore();
@@ -34,67 +34,75 @@ export const ProductsSection: React.FC = () => {
   }, [products, searchQuery, selectedTag]);
 
   return (
-    <section id="produtos" className="container-main" style={{ paddingBottom: '6rem' }}>
+    <section id="produtos" className="container-main py-12">
       {/* Section Header */}
-      <div className="catalog-header">
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-neon-red)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '0.6rem' }}>
-          <Terminal style={{ width: '16px', height: '16px' }} />
-          <span>// CATALOG MODULE : ACCESS GRANTED //</span>
+      <div className="max-w-3xl mb-8">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#ff003c] uppercase tracking-wider mb-2">
+          <Sparkles className="w-4 h-4" />
+          <span>• Catálogo de Ativos & Soluções Digitais</span>
         </div>
-        <h2 className="catalog-title">
-          CATÁLOGO DE <span style={{ color: 'var(--color-neon-red)' }} className="neon-glow-text">PRODUTOS</span> & SERVIÇOS
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-display tracking-tight">
+          Nossos <span className="text-[#ff003c]">Produtos</span> & Serviços
         </h2>
-        <p style={{ color: '#a0a0b2', marginTop: '0.75rem', fontSize: '1rem', fontWeight: 300, lineHeight: 1.6 }}>
-          Selecione os melhores pacotes de infoprodutos, contas premium e boosts. Todos os itens são entregues no nosso servidor do Discord com garantia e suporte anti-quedas.
+        <p className="text-slate-400 mt-2 text-sm leading-relaxed">
+          Selecione os melhores pacotes de infoprodutos, licenças e otimizações. Todos os itens são validados e liberados com suporte corporativo em nosso canal oficial.
         </p>
       </div>
 
-      {/* Search Input Box */}
-      <div className="search-box-container">
-        <input 
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Buscar por jogo, conta, robux ou serviço..."
-          className="search-input"
-        />
-        <Search className="search-icon-pos" style={{ width: '20px', height: '20px' }} />
-        {searchQuery && (
-          <button 
-            onClick={() => setSearchQuery('')}
-            className="search-clear-pos"
-          >
-            [ LIMPAR ]
-          </button>
-        )}
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between mb-8 pb-6 border-b border-white/10">
+        {/* Search Input */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input 
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por nome, categoria ou recurso..."
+            style={{ backgroundColor: '#141622', color: '#ffffff' }}
+            className="w-full pl-10 pr-20 py-2.5 bg-[#141622] border border-white/12 rounded-xl text-white text-xs font-medium focus:outline-none focus:border-[#ff003c] placeholder:text-slate-500 transition-colors shadow-sm"
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-400 hover:text-white bg-[#1a1c2e] px-2 py-1 rounded-lg transition-colors"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+
+        {/* Tags Category Pills */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {availableTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setSelectedTag(tag)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                selectedTag === tag 
+                  ? 'bg-[#ff003c] text-white shadow-md shadow-[#ff003c]/20 scale-105' 
+                  : 'bg-[#141622] border border-white/10 text-slate-400 hover:text-white hover:border-white/25'
+              }`}
+            >
+              {tag === 'TODOS' ? `Todos (${products.length})` : tag}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Tags Category Pills */}
-      <div className="tags-bar">
-        {availableTags.map((tag) => (
-          <button
-            key={tag}
-            onClick={() => setSelectedTag(tag)}
-            className={`tag-btn ${selectedTag === tag ? 'active' : 'inactive'}`}
-          >
-            {tag === 'TODOS' ? `🔥 ${tag}` : tag}
-          </button>
-        ))}
-      </div>
-
-      {/* Results Count & Filter Status */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '1rem', marginBottom: '2rem', borderBottom: '1px solid rgba(255,0,60,0.2)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#a0a0b2' }}>
+      {/* Results Count & Active Filter */}
+      <div className="flex justify-between items-center text-xs text-slate-400 mb-6">
         <div>
-          Exibindo <strong style={{ color: 'var(--color-neon-red)' }}>{filteredProducts.length}</strong> de <strong style={{ color: '#ffffff' }}>{products.length}</strong> produtos
+          Exibindo <strong className="text-white font-bold">{filteredProducts.length}</strong> de <strong className="text-white">{products.length}</strong> itens disponíveis
         </div>
         {selectedTag !== 'TODOS' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--color-neon-cyan)' }}>
-            <span>Filtro ativo: {selectedTag}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-emerald-400 font-medium">Categoria ativa: {selectedTag}</span>
             <button 
               onClick={() => setSelectedTag('TODOS')}
-              style={{ textDecoration: 'underline', color: '#ffffff', cursor: 'pointer', background: 'transparent', border: 'none' }}
+              className="text-slate-400 hover:text-white underline font-semibold transition-colors"
             >
-              Limpar filtro
+              Ver todas
             </button>
           </div>
         )}
@@ -102,7 +110,7 @@ export const ProductsSection: React.FC = () => {
 
       {/* Products Grid */}
       {filteredProducts.length > 0 ? (
-        <div className="products-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
           {filteredProducts.map((product) => (
             <ProductCard 
               key={product.id} 
@@ -113,22 +121,22 @@ export const ProductsSection: React.FC = () => {
         </div>
       ) : (
         /* Empty State */
-        <div style={{ padding: '5rem 1.5rem', textAlign: 'center', background: '#121218', border: '1px dashed rgba(255,0,60,0.4)', maxWidth: '650px', margin: '0 auto' }}>
-          <ShoppingBag style={{ width: '48px', height: '48px', color: 'var(--color-neon-red)', margin: '0 auto 1rem auto', opacity: 0.6 }} />
-          <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-display)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-            Nenhum produto encontrado
+        <div className="py-16 px-6 text-center bg-[#0e1018] border border-dashed border-white/15 rounded-2xl max-w-lg mx-auto shadow-sm">
+          <ShoppingBag className="w-12 h-12 text-[#ff003c] mx-auto mb-4 opacity-75" />
+          <h3 className="text-lg font-bold text-white font-display mb-2">
+            Nenhum produto correspondente
           </h3>
-          <p style={{ color: '#a0a0b2', fontSize: '0.9rem', marginBottom: '1.5rem', fontWeight: 300 }}>
-            Não encontramos nenhum item correspondente a "{searchQuery || selectedTag}". Tente mudar sua busca ou selecionar a categoria "TODOS".
+          <p className="text-slate-400 text-xs mb-6 max-w-sm mx-auto leading-relaxed">
+            Não encontramos nenhum item para "{searchQuery || selectedTag}". Tente alterar os termos da busca ou selecione a categoria "Todos".
           </p>
           <button 
             onClick={() => {
               setSearchQuery('');
               setSelectedTag('TODOS');
             }}
-            className="btn-cyber"
+            className="px-5 py-2.5 bg-[#ff003c] hover:bg-[#d90033] text-white font-bold text-xs rounded-xl shadow transition-all"
           >
-            VER TODOS OS PRODUTOS
+            Exibir Todos os Produtos
           </button>
         </div>
       )}

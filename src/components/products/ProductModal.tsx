@@ -25,23 +25,18 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
       <div 
-        className="relative w-full max-w-2xl bg-[#121218] border-2 border-[#ff003c] neon-glow-lg max-h-[90vh] overflow-y-auto flex flex-col"
+        className="relative w-full max-w-2xl bg-[#0e1018] border border-white/12 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#191922] border-b border-[#ff003c]/40 sticky top-0 z-10">
-          <div className="flex items-center gap-2 font-mono text-xs text-[#ff003c] uppercase tracking-widest">
-            <img 
-              src="/fotos/videos/a_3b92739a0066d125bf473beccfe5bbb1.gif" 
-              alt="Verified" 
-              className="w-4 h-4 object-contain rounded-full border border-[#ff003c]"
-            />
-            <Sparkles className="w-4 h-4 animate-spin" />
-            <span>// BLOOD STORE : ESPECIFICAÇÃO DE PRODUTO //</span>
+        <div className="flex items-center justify-between px-6 py-4 bg-[#141622] border-b border-white/10 sticky top-0 z-10">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#ff003c] uppercase tracking-wider">
+            <Sparkles className="w-4 h-4" />
+            <span>• Detalhes & Especificações do Ativo</span>
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-[#ff003c]/20 border border-transparent hover:border-[#ff003c] transition-all"
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
             aria-label="Fechar"
           >
             <X className="w-5 h-5" />
@@ -52,7 +47,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
         <div className="p-6 space-y-6">
           {/* Image & Price Header */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div className="relative h-56 w-full overflow-hidden border border-[#ff003c]/50 bg-[#0b0b0b]">
+            <div className="relative h-56 w-full overflow-hidden rounded-xl border border-white/10 bg-[#141622]">
               <img 
                 src={product.imageUrl} 
                 alt={product.name} 
@@ -61,39 +56,39 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                   (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop';
                 }}
               />
-              <div className="absolute top-2 left-2 px-2 py-0.5 bg-[#0b0b0b]/90 border border-[#ff003c] text-xs font-mono text-[#ff003c] uppercase">
+              <div className="absolute top-3 left-3 px-2.5 py-1 bg-[#090a0f]/85 backdrop-blur-md border border-white/15 rounded-full text-[10px] font-bold text-slate-200 uppercase tracking-wide">
                 {product.tag}
               </div>
             </div>
 
             <div className="flex flex-col justify-center space-y-3">
-              <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">// CÓDIGO: {product.slug}</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Código do Item: {product.slug}</span>
               <h2 className="text-2xl font-black text-white font-display leading-tight">
                 {product.name}
               </h2>
 
-              <div className="flex items-baseline gap-3 pt-2">
+              <div className="flex items-baseline gap-3 pt-1">
                 <span className="text-3xl font-black font-mono text-[#ff003c]">
                   R$ {product.price.toFixed(2).replace('.', ',')}
                 </span>
                 {product.originalPrice && (
-                  <span className="text-sm font-mono text-gray-500 line-through">
+                  <span className="text-sm font-mono text-slate-500 line-through">
                     R$ {product.originalPrice.toFixed(2).replace('.', ',')}
                   </span>
                 )}
               </div>
 
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#ff003c]/10 border border-[#ff003c]/40 text-xs text-gray-200">
-                <ShieldCheck className="w-4 h-4 text-[#ff003c]" />
-                <span>Garantia de Entrega Blood Store</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-400 font-medium">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Suporte Garantido & Entrega Oficial</span>
               </div>
             </div>
           </div>
 
           {/* Description */}
           <div>
-            <h4 className="text-xs font-mono text-[#ff003c] uppercase tracking-wider mb-2">// DESCRIÇÃO DO PRODUTO</h4>
-            <p className="text-gray-300 text-sm leading-relaxed font-light bg-[#0b0b0b]/80 p-4 border border-gray-800">
+            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Descrição & Detalhes</h4>
+            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed bg-[#141622] p-4 rounded-xl border border-white/10 font-normal">
               {product.description}
             </p>
           </div>
@@ -101,10 +96,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
           {/* Features */}
           {product.features && product.features.length > 0 && (
             <div>
-              <h4 className="text-xs font-mono text-[#ff003c] uppercase tracking-wider mb-2">// VANTAGENS & INCLUSÕES</h4>
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Inclusões e Recursos</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {product.features.map((feat, i) => (
-                  <div key={i} className="flex items-center gap-2 p-2.5 bg-[#16161f] border border-[#ff003c]/20 text-xs text-gray-200">
+                  <div key={i} className="flex items-center gap-2 p-2.5 bg-[#141622] border border-white/10 rounded-xl text-xs text-slate-200">
                     <Sparkles className="w-3.5 h-3.5 text-[#ff003c] flex-shrink-0" />
                     <span>{feat}</span>
                   </div>
@@ -114,42 +109,41 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
           )}
 
           {/* How to Buy Step-by-Step Box */}
-          <div className="p-4 bg-[#14141d] border-l-4 border-[#ff003c] space-y-3">
-            <div className="flex items-center gap-2 text-sm font-bold text-white uppercase font-display">
+          <div className="p-4 bg-[#141622] border-l-4 border-[#ff003c] rounded-r-xl space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-white uppercase font-display">
               <MessageSquare className="w-4 h-4 text-[#ff003c]" />
-              <span>COMO FINALIZAR SUA COMPRA VIA DISCORD</span>
+              <span>Processo de Liberação & Entrega</span>
             </div>
-            <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside font-mono">
-              <li>Clique no botão abaixo para entrar em nosso servidor do Discord.</li>
-              <li>Abra um Ticket de Atendimento na categoria de compras.</li>
-              <li>Sua mensagem com o produto será copiada automaticamente. Cole no ticket!</li>
-              <li>Realize o pagamento via PIX com nosso atendente e receba seu produto em até 24h.</li>
+            <ol className="text-xs text-slate-300 space-y-1.5 list-decimal list-inside leading-relaxed">
+              <li>Clique no botão de compra abaixo ou adicione o item ao seu carrinho.</li>
+              <li>No checkout, informe seu nickname do Discord ou pague via PIX instantâneo.</li>
+              <li>A liberação é registrada em tempo real no servidor com recibo de transação.</li>
             </ol>
           </div>
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="p-6 bg-[#161620] border-t border-[#ff003c]/40 flex flex-wrap items-center justify-between gap-3 sticky bottom-0">
+        <div className="p-6 bg-[#141622] border-t border-white/10 flex flex-wrap items-center justify-between gap-3 sticky bottom-0 rounded-b-2xl">
           <button 
             onClick={() => {
               addToCart(product, 1);
               setAddedToast(true);
               setTimeout(() => { setAddedToast(false); onClose(); }, 1200);
             }}
-            className="btn-cyber-outline py-3 px-5 text-xs flex items-center justify-center gap-2"
+            className="px-5 py-2.5 bg-[#1a1d2e] hover:bg-[#ff003c] border border-white/12 hover:border-[#ff003c] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2"
           >
-            {addedToast ? <Check className="w-4 h-4 text-green-400" /> : <Plus className="w-4 h-4 text-[#ff003c]" />}
-            <span>{addedToast ? 'ADICIONADO!' : 'ADICIONAR AO CARRINHO'}</span>
+            {addedToast ? <Check className="w-4 h-4 text-emerald-400" /> : <Plus className="w-4 h-4" />}
+            <span>{addedToast ? 'Adicionado ao Carrinho!' : 'Adicionar ao Carrinho'}</span>
           </button>
 
           <div className="flex items-center gap-3 flex-1 justify-end">
             <button 
               onClick={handleProceedToDiscord}
-              className="py-3 px-4 bg-[#191922] border border-gray-700 hover:border-[#00f0ff] text-gray-200 font-mono text-xs flex items-center justify-center gap-1.5 transition-all"
-              title="Pagar direto no Discord sem passar pelo checkout"
+              className="px-4 py-2.5 bg-[#1a1d2e] hover:bg-[#252a42] border border-white/12 text-slate-300 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
+              title="Acessar suporte direto"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-[#00f0ff]" />
-              <span>DISCORD DIRETO</span>
+              <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+              <span>Atendimento Discord</span>
             </button>
 
             <button 
@@ -158,10 +152,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                 setActiveView('checkout');
                 onClose();
               }}
-              className="btn-cyber py-3 px-6 text-sm flex items-center justify-center gap-2"
+              className="px-6 py-2.5 bg-[#ff003c] hover:bg-[#d90033] text-white font-bold text-xs rounded-xl shadow-lg shadow-[#ff003c]/20 transition-all flex items-center justify-center gap-2"
             >
               <ShoppingCart className="w-4 h-4" />
-              <span>FINALIZAR NO CHECKOUT</span>
+              <span>Comprar / Ir para o Checkout</span>
             </button>
           </div>
         </div>

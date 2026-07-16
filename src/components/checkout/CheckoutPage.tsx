@@ -377,19 +377,21 @@ export const CheckoutPage: React.FC = () => {
               <span>Selecione o Método de Liberação</span>
             </h3>
 
-            {/* Sleek Selection Buttons with Generated Crest Icons */}
+            {/* Sleek Selection Buttons without photos */}
             <div className="grid grid-cols-2 gap-2.5 mb-4">
               <button
                 type="button"
                 onClick={() => { setPaymentMethod('pix'); setPixGenerated(false); }}
-                className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between cursor-pointer ${
+                className={`p-3.5 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between cursor-pointer ${
                   paymentMethod === 'pix'
                     ? 'bg-[#161424] border-[#ff003c] shadow-[0_0_15px_rgba(255,0,60,0.25)] ring-1 ring-[#ff003c]'
                     : 'bg-[#121218] border-white/10 hover:border-white/25 opacity-70 hover:opacity-100'
                 }`}
               >
-                <div className="flex items-center justify-between w-full mb-2">
-                  <img src="/fotos/pix_payment_icon.png" alt="PIX" className="w-8 h-8 rounded-md border border-[#ff003c]/50 object-cover" />
+                <div className="flex items-center justify-between w-full mb-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#ff003c]/15 border border-[#ff003c]/40 flex items-center justify-center text-[#ff003c]">
+                    <QrCode className="w-4 h-4" />
+                  </div>
                   {paymentMethod === 'pix' && (
                     <span className="w-4 h-4 rounded-full bg-[#ff003c] flex items-center justify-center text-white">
                       <Check className="w-2.5 h-2.5 stroke-[3]" />
@@ -398,8 +400,8 @@ export const CheckoutPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-white leading-tight">PIX Instantâneo</div>
-                  <div className="text-[10px] text-emerald-400 font-semibold mt-0.5 flex items-center gap-1">
-                    <span>Aprovação Bot Automática</span>
+                  <div className="text-[10px] text-emerald-400 font-semibold mt-1 flex items-center gap-1">
+                    <span>Aprovação Automática</span>
                   </div>
                 </div>
               </button>
@@ -407,14 +409,16 @@ export const CheckoutPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => { setPaymentMethod('discord'); setPixGenerated(false); }}
-                className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between cursor-pointer ${
+                className={`p-3.5 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between cursor-pointer ${
                   paymentMethod === 'discord'
                     ? 'bg-[#161424] border-[#ff003c] shadow-[0_0_15px_rgba(255,0,60,0.25)] ring-1 ring-[#ff003c]'
                     : 'bg-[#121218] border-white/10 hover:border-white/25 opacity-70 hover:opacity-100'
                 }`}
               >
-                <div className="flex items-center justify-between w-full mb-2">
-                  <img src="/fotos/discord_delivery_icon.png" alt="Discord" className="w-8 h-8 rounded-md border border-[#ff003c]/50 object-cover" />
+                <div className="flex items-center justify-between w-full mb-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                    <ExternalLink className="w-4 h-4" />
+                  </div>
                   {paymentMethod === 'discord' && (
                     <span className="w-4 h-4 rounded-full bg-[#ff003c] flex items-center justify-center text-white">
                       <Check className="w-2.5 h-2.5 stroke-[3]" />
@@ -423,7 +427,7 @@ export const CheckoutPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-white leading-tight">Ticket no Discord</div>
-                  <div className="text-[10px] text-slate-300 font-semibold mt-0.5 flex items-center gap-1">
+                  <div className="text-[10px] text-slate-300 font-semibold mt-1 flex items-center gap-1">
                     <span>Atendimento Assistido</span>
                   </div>
                 </div>
@@ -561,18 +565,14 @@ export const CheckoutPage: React.FC = () => {
                     <span className="px-1.5 py-0.5 bg-emerald-500/20 rounded text-[9px]">Oficial</span>
                   </div>
 
-                  <div className="bg-white p-2.5 rounded-lg flex flex-col items-center justify-center border border-emerald-500">
-                    <div className="w-24 h-24 bg-black p-1 relative rounded overflow-hidden">
-                      <img 
-                        src="/fotos/pix_payment_icon.png" 
-                        alt="QR Code" 
-                        className="w-full h-full object-cover filter contrast-200"
-                      />
-                      <div className="absolute inset-2 bg-[#ff003c] rounded flex items-center justify-center text-white font-bold text-[8px] text-center p-0.5 shadow-md">
-                        PIX Oficial<br />R$ {total.toFixed(2)}
+                  <div className="bg-white p-3 rounded-xl flex flex-col items-center justify-center border border-emerald-500 shadow-md">
+                    <div className="w-28 h-28 bg-[#090a0f] p-2 relative rounded-lg flex flex-col items-center justify-center border border-[#ff003c]/40 shadow-inner">
+                      <QrCode className="w-16 h-16 text-white" />
+                      <div className="mt-1 text-[#ff003c] font-bold text-[9px] uppercase tracking-widest">
+                        PIX Oficial
                       </div>
                     </div>
-                    <span className="mt-1 text-[9px] font-extrabold text-slate-900">
+                    <span className="mt-2 text-[10px] font-extrabold text-slate-900 tracking-wider">
                       ESCANEIE NO APP BANCÁRIO
                     </span>
                   </div>
