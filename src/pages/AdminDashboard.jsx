@@ -15,6 +15,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   } = useStore();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [activeTab, setActiveTab] = useState('products'); // 'products' | 'config' | 'terms'
 
@@ -41,10 +42,11 @@ export const AdminDashboard = ({ onExitAdmin }) => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (passwordInput === 'admin123') {
+    const cleanUser = usernameInput.trim().toLowerCase();
+    if ((cleanUser === 'admin' || cleanUser === 'staff') && passwordInput === 'admin123') {
       setIsAuthenticated(true);
     } else {
-      alert('Senha incorreta! (Padrão: admin123)');
+      alert('Credenciais inválidas.');
     }
   };
 
@@ -109,24 +111,36 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       <div className="admin-login-screen">
         <div className="admin-login-box">
           <div className="admin-login-header">
-            <i className="fa-solid fa-shield-halved text-red" style={{ fontSize: '2.5rem', marginBottom: '12px' }}></i>
-            <h2>Acesso Gerencial</h2>
-            <p>Painel de Controle • Blood Store</p>
+            <i className="fa-solid fa-droplet text-red" style={{ fontSize: '2.4rem', marginBottom: '12px' }}></i>
+            <h2>Área da Equipe</h2>
+            <p>Painel Operacional • Blood Store</p>
           </div>
           <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label className="form-label">Senha do Administrador</label>
+            <div className="form-group" style={{ textAlign: 'left' }}>
+              <label className="form-label">Usuário</label>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="ex: staff" 
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value)}
+                required 
+                autoComplete="off"
+              />
+            </div>
+            <div className="form-group" style={{ textAlign: 'left' }}>
+              <label className="form-label">Senha</label>
               <input 
                 type="password" 
                 className="form-input" 
-                placeholder="Digite a senha (padrão: admin123)..." 
+                placeholder="••••••••" 
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 required 
               />
             </div>
-            <button type="submit" className="btn-complete-order">
-              <i className="fa-solid fa-unlock"></i> Acessar Painel
+            <button type="submit" className="btn-complete-order" style={{ marginTop: '6px' }}>
+              <i className="fa-solid fa-arrow-right-to-bracket"></i> Acessar Painel
             </button>
           </form>
           <button onClick={onExitAdmin} className="btn-back-home" style={{ marginTop: '16px' }}>
@@ -144,7 +158,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
         <div className="admin-sidebar-top">
           <div className="navbar-brand" style={{ fontSize: '1.3rem' }}>
             <i className="fa-solid fa-shield-halved text-red"></i>
-            <span>ADMIN BLOOOD</span>
+            <span>BLOOD STAFF</span>
           </div>
           <p style={{ fontSize: '0.78rem', color: '#78788c', marginTop: '4px' }}>Modo de Edição em Tempo Real</p>
         </div>

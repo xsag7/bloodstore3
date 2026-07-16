@@ -9,7 +9,7 @@ export const Navbar = ({ onOpenAdmin }) => {
       <div className="container navbar-inner">
         <a href="#inicio" className="navbar-brand">
           <img 
-            src="/fotos e videos/logo.png" 
+            src={config.logoUrl || "/fotos e videos/BloodstoreLogo1.png"} 
             onError={(e) => {
               e.target.style.display = 'none';
               e.target.nextElementSibling.style.display = 'flex';

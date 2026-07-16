@@ -8,9 +8,10 @@ const DEFAULT_STATE = {
     storeName: "BLOOD STORE",
     slogan: "Sua evolução começa aqui.",
     discordInvite: "https://discord.gg/Gvbg5WYPBP",
-    // IMPORTANTE: Coloque a URL do seu Webhook do Discord abaixo via Painel Admin ou direto no código:
     webhookUrl: "", 
-    pixKey: "00020126580014br.gov.bcb.pix0136BLOOD-STORE-PIX-EXCLUSIVE5204000053039865802BR5911BLOOD STORE6009SAO PAULO62070503***63041A2B"
+    pixKey: "00020126580014br.gov.bcb.pix0136BLOOD-STORE-PIX-EXCLUSIVE5204000053039865802BR5911BLOOD STORE6009SAO PAULO62070503***63041A2B",
+    logoUrl: "/fotos e videos/BloodstoreLogo1.png",
+    bannerVideoUrl: "/fotos e videos/animation.mp4"
   },
   products: [
     {
@@ -173,7 +174,15 @@ export const StoreProvider = ({ children }) => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return {
+          ...DEFAULT_STATE,
+          ...parsed,
+          config: {
+            ...DEFAULT_STATE.config,
+            ...(parsed.config || {})
+          }
+        };
       }
     } catch (e) {
       console.error("Erro ao ler do LocalStorage, restaurando padrão:", e);
