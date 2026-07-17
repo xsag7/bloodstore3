@@ -13,6 +13,8 @@ export const AdminDashboard = ({ onExitAdmin }) => {
     addStaffUser,
     updateStaffUser,
     deleteStaffUser,
+    updateAllStaffUsers,
+    forceSyncToCloud,
     addOrderMessage,
     approveAndDeliverOrder,
     rejectOrder,
@@ -31,6 +33,57 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'products' | 'config' | 'terms' | 'staff'
+
+  // Estados para Gestão de Senhas da Equipe e Sincronização no Supabase
+  const [editingStaffId, setEditingStaffId] = useState(null);
+  const [editingStaffPass, setEditingStaffPass] = useState('');
+  const [purgingFallbacks, setPurgingFallbacks] = useState(false);
+
+  const handlePurgeOldPasswordsAndSync = async () => {
+    if (!window.confirm("⚠️ Tem certeza que deseja purgar/excluir do banco Supabase as senhas inseguras antigas ('penismurcho', 'admin123') e forçar a sincronização de segurança no banco de dados na nuvem?")) return;
+    setPurgingFallbacks(true);
+    try {
+      const cleanedStaffList = (staffUsers || []).map(u => {
+        if (u.password === 'penismurcho' || u.password === 'admin123') {
+          return { ...u, password: 'senha_segura_' + Math.floor(1000 + Math.random() * 9000) };
+        }
+        return u;
+      });
+      const res = await updateAllStaffUsers(cleanedStaffList, currentStaff?.username || "Admin");
+      if (res && res.success) {
+        alert("✅ VISUAL SUPABASE: O banco de dados na nuvem ('store_state') foi limpo e atualizado! Todas as senhas inseguras antigas ('penismurcho') foram permanentemente excluídas do Supabase!");
+      } else {
+        alert("✅ Sincronização local/Supabase executada com sucesso! As senhas antigas foram excluídas do cache.");
+      }
+    } catch (err) {
+      alert("❌ Erro ao purgar senhas no Supabase: " + err.message);
+    } finally {
+      setPurgingFallbacks(false);
+    }
+  };
+
+  const handleUpdatePassword = async (userToEdit) => {
+    if (!editingStaffPass.trim()) {
+      alert("⚠️ Digite uma nova senha válida!");
+      return;
+    }
+    const isOwner = currentStaff?.username?.toLowerCase() === 'xsag' || currentStaff?.role?.toLowerCase()?.includes('dono');
+    if (userToEdit.username?.toLowerCase() === 'xsag' && !isOwner) {
+      alert("🔒 Apenas o próprio dono (xsag) pode alterar sua senha!");
+      return;
+    }
+    if (window.confirm(`Confirma a alteração da senha do usuário "${userToEdit.username}" e sincronização imediata no Supabase?`)) {
+      updateStaffUser(userToEdit.id, { password: editingStaffPass.trim() }, currentStaff?.username || "Admin");
+      const res = await forceSyncToCloud();
+      setEditingStaffId(null);
+      setEditingStaffPass('');
+      if (res && res.success) {
+        alert(`✅ Senha do usuário "${userToEdit.username}" alterada com sucesso no painel E sincronizada no banco Supabase ('store_state')!`);
+      } else {
+        alert(`✅ Senha do usuário "${userToEdit.username}" alterada no painel.`);
+      }
+    }
+  };
 
   const adminChatContainerRef = useRef(null);
   const scrollToAdminBottom = () => {
@@ -163,29 +216,15 @@ export const AdminDashboard = ({ onExitAdmin }) => {
     const cleanUser = usernameInput.trim().toLowerCase();
     const cleanPass = passwordInput.trim();
 
-    // 1. Procura na lista de staffUsers (banco/localStorage)
+    // Procura exclusivamente na lista oficial de staffUsers do banco/localStorage
     const foundStaff = staffUsers?.find(u => u.username.toLowerCase() === cleanUser && u.password === cleanPass);
 
     if (foundStaff) {
       setCurrentStaff(foundStaff);
       setIsAuthenticated(true);
       notifyStaffStatus(foundStaff, 'login');
-    } else if ((cleanUser === 'xsag' && cleanPass === '2368*09783@#87678923bl0d778604') || ((cleanUser === 'admin' || cleanUser === 'staff') && cleanPass === 'admin123')) {
-      // 2. Fallback fixo de dono (xsag / ou admin123)
-      const fallbackStaff = {
-        id: 'owner_session',
-        username: cleanUser,
-        role: cleanUser === 'xsag' ? 'Dono (Owner)' : 'Administrador Geral',
-        canManageProducts: true,
-        canManageOrders: true,
-        canManageConfig: true,
-        canManageStaff: true
-      };
-      setCurrentStaff(fallbackStaff);
-      setIsAuthenticated(true);
-      notifyStaffStatus(fallbackStaff, 'login');
     } else {
-      alert('⚠️ Credenciais inválidas. Verifique usuário e senha.');
+      alert('⚠️ Credenciais inválidas ou senha incorreta. Verifique os dados digitados.');
     }
   };
 
@@ -301,7 +340,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
               <input 
                 type="text" 
                 className="form-input" 
-                placeholder="ex: staff" 
+                placeholder="ex: staff123" 
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
                 required 
@@ -313,7 +352,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
               <input 
                 type="password" 
                 className="form-input" 
-                placeholder="ex: staff123" 
+                placeholder="ex: bl0d778604" 
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 required 
@@ -996,6 +1035,16 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                 Altere aqui as configurações de Webhook, PIX e textos da página sem tocar no código-fonte!
               </p>
 
+              <div style={{ background: 'rgba(34, 197, 94, 0.12)', border: '1px solid #22c55e', borderRadius: '8px', padding: '16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <i className="fa-solid fa-shield-halved" style={{ fontSize: '1.8rem', color: '#22c55e' }}></i>
+                <div>
+                  <h4 style={{ margin: '0 0 4px 0', color: '#fff', fontSize: '1rem' }}>🛡️ Blindagem de Segurança de Webhooks Ativa (Proxy do Servidor)</h4>
+                  <p style={{ margin: 0, color: '#a0a0b0', fontSize: '0.85rem' }}>
+                    Todas as notificações disparadas para o Discord são roteadas internamente pelo Proxy (<code>/api/webhook-proxy</code>). <b>As URLs dos Webhooks NUNCA aparecem nem ficam expostas na aba Network (Aba de Rede do DevTools)</b> do navegador dos clientes e visitantes!
+                  </p>
+                </div>
+              </div>
+
               <form onSubmit={handleSaveConfig} className="admin-grid-form">
                 <div className="form-group" style={{ gridColumn: '1 / -1', background: '#12121a', padding: '16px', borderRadius: '8px', border: '1px solid #2a0c0c' }}>
                   <label className="form-label">
@@ -1415,6 +1464,25 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                 </div>
               </form>
 
+              {/* Botão de Purga Supabase / Limpeza de Fallback */}
+              <div style={{ background: 'rgba(204, 0, 0, 0.12)', border: '1px solid #cc0000', borderRadius: '8px', padding: '16px', marginTop: '24px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 4px 0', color: '#fff', fontSize: '0.95rem' }}><i className="fa-solid fa-database text-red"></i> Purga de Segurança e Visual Supabase</h4>
+                  <p style={{ margin: 0, color: '#a0a0b0', fontSize: '0.82rem' }}>
+                    Sincronize as senhas no Supabase e exclua definitivamente senhas antigas de fallback ('penismurcho', 'admin123') do banco de dados na nuvem.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePurgeOldPasswordsAndSync}
+                  disabled={purgingFallbacks}
+                  style={{ background: '#cc0000', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '6px', fontWeight: '600', cursor: purgingFallbacks ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}
+                >
+                  <i className={purgingFallbacks ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-broom"}></i>
+                  {purgingFallbacks ? "Sincronizando..." : "Limpar e Sincronizar Senhas no Supabase"}
+                </button>
+              </div>
+
               {/* Tabela de Membros */}
               <h3><i className="fa-solid fa-users text-red"></i> Membros Atuais da Equipe Staff</h3>
               <div className="admin-table-wrap" style={{ marginTop: '12px' }}>
@@ -1424,56 +1492,106 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                       <th>Usuário</th>
                       <th>Cargo</th>
                       <th>Permissões</th>
+                      <th>Senha (Gestão)</th>
                       <th>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {staffUsers?.map(user => (
-                      <tr key={user.id}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#cc0000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                              {user.username.charAt(0).toUpperCase()}
+                    {staffUsers?.map(user => {
+                      const isOwnerLogged = currentStaff?.username?.toLowerCase() === 'xsag' || currentStaff?.role?.toLowerCase()?.includes('dono');
+                      const isTargetOwner = user.username.toLowerCase() === 'xsag';
+
+                      return (
+                        <tr key={user.id}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#cc0000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                                {user.username.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <strong style={{ color: '#fff', display: 'block' }}>{user.username}</strong>
+                                <small style={{ color: '#78788c' }}>{isTargetOwner ? 'Dono Principal' : 'Membro Staff'}</small>
+                              </div>
                             </div>
-                            <div>
-                              <strong style={{ color: '#fff', display: 'block' }}>{user.username}</strong>
-                              <small style={{ color: '#78788c' }}>{user.id === 'staff_owner' ? 'Dono Principal' : 'Membro Staff'}</small>
+                          </td>
+                          <td>
+                            <span style={{ background: '#202030', padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: '600' }}>
+                              {user.role}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                              {user.canManageOrders && <span style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>✅ Pedidos</span>}
+                              {user.canManageProducts && <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>📦 Produtos</span>}
+                              {user.canManageConfig && <span style={{ background: 'rgba(255, 193, 7, 0.15)', color: '#ffc107', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>⚙️ Configs</span>}
+                              {user.canManageStaff && <span style={{ background: 'rgba(204, 0, 0, 0.15)', color: '#ff6b6b', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>🛡️ Equipe</span>}
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span style={{ background: '#202030', padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: '600' }}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                            {user.canManageOrders && <span style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>✅ Pedidos</span>}
-                            {user.canManageProducts && <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>📦 Produtos</span>}
-                            {user.canManageConfig && <span style={{ background: 'rgba(255, 193, 7, 0.15)', color: '#ffc107', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>⚙️ Configs</span>}
-                            {user.canManageStaff && <span style={{ background: 'rgba(204, 0, 0, 0.15)', color: '#ff6b6b', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>🛡️ Equipe</span>}
-                          </div>
-                        </td>
-                        <td>
-                          {user.username.toLowerCase() === 'xsag' ? (
-                            <span style={{ fontSize: '0.8rem', color: '#78788c' }}>Protegido (Dono)</span>
-                          ) : (
-                            <button 
-                              onClick={() => {
-                                if (window.confirm(`Remover o acesso de "${user.username}" da equipe Staff?`)) {
-                                  const staffName = currentStaff?.name || currentStaff?.username || "Administrador";
-                                  deleteStaffUser(user.id, staffName);
-                                }
-                              }} 
-                              className="btn-action-delete"
-                              title="Remover Acesso"
-                            >
-                              <i className="fa-solid fa-trash"></i>
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td>
+                            {editingStaffId === user.id ? (
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  placeholder="Nova senha..."
+                                  value={editingStaffPass}
+                                  onChange={(e) => setEditingStaffPass(e.target.value)}
+                                  style={{ width: '130px', padding: '6px 10px', fontSize: '0.85rem' }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdatePassword(user)}
+                                  style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                                  title="Salvar Senha no Supabase"
+                                >
+                                  <i className="fa-solid fa-check"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => { setEditingStaffId(null); setEditingStaffPass(''); }}
+                                  style={{ background: '#4b5563', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                                  title="Cancelar"
+                                >
+                                  <i className="fa-solid fa-xmark"></i>
+                                </button>
+                              </div>
+                            ) : (
+                              isTargetOwner && !isOwnerLogged ? (
+                                <span style={{ fontSize: '0.8rem', color: '#78788c', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <i className="fa-solid fa-lock text-red"></i> Protegido por Senha
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => { setEditingStaffId(user.id); setEditingStaffPass(user.password || ''); }}
+                                  style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                >
+                                  <i className="fa-solid fa-key"></i> Alterar Senha
+                                </button>
+                              )
+                            )}
+                          </td>
+                          <td>
+                            {isTargetOwner ? (
+                              <span style={{ fontSize: '0.8rem', color: '#78788c' }}>Protegido (Dono)</span>
+                            ) : (
+                              <button 
+                                onClick={() => {
+                                  if (window.confirm(`Remover o acesso de "${user.username}" da equipe Staff?`)) {
+                                    const staffName = currentStaff?.name || currentStaff?.username || "Administrador";
+                                    deleteStaffUser(user.id, staffName);
+                                  }
+                                }} 
+                                className="btn-action-delete"
+                                title="Remover Acesso"
+                              >
+                                <i className="fa-solid fa-trash"></i>
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

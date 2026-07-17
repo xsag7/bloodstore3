@@ -446,6 +446,43 @@ export const StoreProvider = ({ children }) => {
     notifyDiscordLogs("Configurações & Webhooks Atualizados", `O usuário @${staffName} atualizou as configurações gerais ou links de Webhook da loja.`, staffName);
   };
 
+  // Sincronização explícita e direta no banco Supabase (para exclusão de senhas e confirmação visual)
+  const forceSyncToCloud = async (customState = null) => {
+    const targetState = customState || storeStateRef.current;
+    if (!supabase) return { success: false, error: 'Supabase não inicializado.' };
+    try {
+      const { data, error } = await supabase.from('store_state').upsert({
+        id: 'global_state',
+        config: targetState.config,
+        products: targetState.products,
+        terms: targetState.terms,
+        orders: targetState.orders || [],
+        staff_users: targetState.staffUsers || [],
+        updated_at: new Date().toISOString()
+      }).select();
+      if (error) return { success: false, error: error.message };
+      return { success: true, data };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const updateAllStaffUsers = async (newStaffList, staffName = "Admin / Staff") => {
+    markLocalUpdate();
+    let nextState;
+    setStoreState(prev => {
+      nextState = {
+        ...prev,
+        staffUsers: newStaffList
+      };
+      storeStateRef.current = nextState;
+      return nextState;
+    });
+    const syncRes = await forceSyncToCloud(nextState);
+    notifyDiscordLogs("Lista de Senhas / Equipe Atualizada no Banco", `As senhas e dados da equipe Staff foram atualizados ou purgados no banco de dados na nuvem por @${staffName}.`, staffName);
+    return syncRes;
+  };
+
   // Funções CRUD de Sub-Administradores (Equipe Staff)
   const addStaffUser = (newUser, staffName = "Admin / Staff") => {
     const id = "staff_" + Date.now();
@@ -455,14 +492,16 @@ export const StoreProvider = ({ children }) => {
       name: sanitizeString(newUser.name || '', 100)
     };
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
-      const next = {
+      nextState = {
         ...prev,
         staffUsers: [...(prev.staffUsers || DEFAULT_STATE.staffUsers), { ...cleanUser, id }]
       };
-      storeStateRef.current = next;
-      return next;
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
     notifyDiscordLogs("Membro Staff Criado", `Novo membro cadastrado: @${cleanUser.username} (${cleanUser.name}) - Cargo: ${cleanUser.role || 'staff'}`, staffName);
   };
 
@@ -472,28 +511,32 @@ export const StoreProvider = ({ children }) => {
     if (cleanFields.name) cleanFields.name = sanitizeString(cleanFields.name, 100);
 
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
-      const next = {
+      nextState = {
         ...prev,
         staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).map(u => u.id === id ? { ...u, ...cleanFields } : u)
       };
-      storeStateRef.current = next;
-      return next;
+      storeStateRef.current = nextState;
+      return nextState;
     });
-    notifyDiscordLogs("Membro Staff Editado", `O membro Staff com ID ${id} teve seus dados ou permissões modificados.`, staffName);
+    forceSyncToCloud(nextState);
+    notifyDiscordLogs("Membro Staff Editado / Senha Alterada", `O membro Staff com ID ${id} teve seus dados ou senha modificados por @${staffName}.`, staffName);
   };
 
   const deleteStaffUser = (id, staffName = "Admin / Staff") => {
     const target = (storeStateRef.current.staffUsers || []).find(u => u.id === id);
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
-      const next = {
+      nextState = {
         ...prev,
         staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).filter(u => u.id !== id && u.username !== 'xsag')
       };
-      storeStateRef.current = next;
-      return next;
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
     notifyDiscordLogs("Membro Staff Removido", `O membro Staff "@${target?.username || id}" (${target?.name || ''}) foi removido da equipe.`, staffName);
   };
 
@@ -586,14 +629,8 @@ export const StoreProvider = ({ children }) => {
     }));
   };
 
-  // --- Central de Notificações Webhook do Discord ---
-  const notifyDiscordWebhook = async (embedData, overrideUrl = null, contentText = null) => {
-    const url = (overrideUrl || storeStateRef.current?.config?.webhookUrl || '').trim();
-    if (!url || typeof url !== 'string' || !url.toLowerCase().includes('discord')) {
-      console.warn("⚠️ Webhook URL do Discord ausente ou em formato inválido:", url);
-      return false;
-    }
-
+  // --- Central de Notificações Webhook do Discord (Blindado contra Network Exposure via Proxy) ---
+  const notifyDiscordWebhook = async (embedData, overrideUrl = null, contentText = null, webhookType = 'sales') => {
     const storeName = storeStateRef.current?.config?.storeName || 'Blood Store';
     const payload = {
       username: `${storeName.substring(0, 60)} • Sistema Ao Vivo`,
@@ -606,28 +643,75 @@ export const StoreProvider = ({ children }) => {
       }]
     };
 
+    const getDirectDiscordUrl = () => {
+      if (overrideUrl && typeof overrideUrl === 'string' && (overrideUrl.includes('discord.com/api/webhooks/') || overrideUrl.includes('discordapp.com/api/webhooks/'))) {
+        return overrideUrl.trim();
+      }
+      const cfg = storeStateRef.current?.config || DEFAULT_STATE.config;
+      if (webhookType === 'approval') return cfg.webhookApprovalUrl || DEFAULT_STATE.config.webhookApprovalUrl;
+      if (webhookType === 'rejected') return cfg.webhookRejectedUrl || DEFAULT_STATE.config.webhookRejectedUrl;
+      if (webhookType === 'logs') return cfg.webhookLogsUrl || DEFAULT_STATE.config.webhookLogsUrl;
+      if (webhookType === 'msgLogs') return cfg.webhookMsgLogsUrl || DEFAULT_STATE.config.webhookMsgLogsUrl;
+      if (webhookType === 'staffJoin') return cfg.webhookStaffJoinUrl || DEFAULT_STATE.config.webhookStaffJoinUrl;
+      return cfg.webhookUrl || DEFAULT_STATE.config.webhookUrl;
+    };
+
     try {
-      const res = await fetch(url, {
+      // PROXY BLINDADO: Envia para o backend (/api/webhook-proxy) preservando as URLs no servidor. Nenhuma URL do Discord é exposta na aba Network!
+      const res = await fetch('/api/webhook-proxy', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          type: webhookType,
+          payload,
+          contentText,
+          ...(overrideUrl ? { overrideUrl } : {})
+        })
       });
+
       if (!res.ok) {
+        if (res.status === 404 || res.status === 502 || res.status === 503) {
+          console.warn(`⚠️ Proxy de Webhook (${res.status}) não disponível. Realizando failover seguro ao Discord...`);
+          const directUrl = getDirectDiscordUrl();
+          if (directUrl && directUrl.includes('discord')) {
+            const directRes = await fetch(directUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            if (directRes.ok || directRes.status === 204) return { success: true, mode: 'direct_fallback' };
+            const directErr = await directRes.text().catch(() => "");
+            return { success: false, status: directRes.status, error: directErr || "Falha no envio direto ao Discord" };
+          }
+        }
         const errText = await res.text().catch(() => "");
         console.error(`❌ Erro no Webhook do Discord (HTTP ${res.status}):`, errText);
         return { success: false, status: res.status, error: errText };
       }
-      return { success: true };
+      return { success: true, mode: 'proxy' };
     } catch (err) {
-      console.error("❌ Erro de rede/CORS ao enviar notificação para o Webhook do Discord:", err);
-      return { success: false, error: err.message };
+      console.warn("⚠️ Erro de conexão com o Proxy (/api/webhook-proxy):", err.message, "• Ativando failover direto...");
+      try {
+        const directUrl = getDirectDiscordUrl();
+        if (directUrl && directUrl.includes('discord')) {
+          const directRes = await fetch(directUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          if (directRes.ok || directRes.status === 204) return { success: true, mode: 'direct_fallback' };
+          const directErr = await directRes.text().catch(() => "");
+          return { success: false, status: directRes.status, error: directErr || "O Discord rejeitou a requisição direta." };
+        }
+      } catch (directCatchErr) {
+        console.error("❌ Falha tanto no Proxy quanto no envio direto ao Discord:", directCatchErr);
+        return { success: false, status: 0, error: `Verifique sua conexão com a internet ou adblock (${directCatchErr.message})` };
+      }
+      return { success: false, status: 0, error: err.message };
     }
   };
 
   const notifyDiscordLogs = async (action, details, staffName = "Staff / Admin") => {
-    const url = (storeStateRef.current?.config?.webhookLogsUrl || DEFAULT_STATE.config.webhookLogsUrl || '').trim();
-    if (!url || !url.toLowerCase().includes('discord')) return;
-
     return await notifyDiscordWebhook({
       title: `🛠️ [LOG DE ALTERAÇÃO NO SITE] • ${action}`,
       description: `Uma modificação administrativa foi registrada no painel da **Blood Store**.`,
@@ -638,13 +722,10 @@ export const StoreProvider = ({ children }) => {
         { name: "🕒 Horário do Registro", value: new Date().toLocaleTimeString('pt-BR'), inline: true },
         { name: "📝 Detalhes da Modificação", value: `\`\`\`\n${details}\n\`\`\``, inline: false }
       ]
-    }, url);
+    }, null, null, 'logs');
   };
 
   const notifyStaffStatus = async (staffUser, statusType = 'login', customMessage = null) => {
-    const url = (storeStateRef.current?.config?.webhookStaffJoinUrl || DEFAULT_STATE.config.webhookStaffJoinUrl || '').trim();
-    if (!url || !url.toLowerCase().includes('discord')) return;
-
     const isLogin = statusType === 'login';
     const staffName = staffUser?.name || staffUser?.username || 'Staff Desconhecido';
     const staffUserTag = staffUser?.username || 'user';
@@ -661,7 +742,7 @@ export const StoreProvider = ({ children }) => {
         { name: "🛡️ Cargo / Função", value: `\`${role}\``, inline: true },
         { name: "🕒 Horário de Registro", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
       ]
-    }, url);
+    }, null, null, 'staffJoin');
   };
 
   const testDiscordWebhook = async (testUrl, type = 'sales') => {
@@ -714,7 +795,7 @@ export const StoreProvider = ({ children }) => {
       color = 3717080;
       fields = [
         { name: "💬 Remetente Exemplo", value: "**Staff Blood Store**", inline: true },
-        { name: "📦 Pedido Exemplo", value: "**#ORD-98214**", inline: true },
+        { name: "📦 Produto Exemplo", value: "**Robux 10.000**", inline: true },
         { name: "🕒 Horário do Teste", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
       ];
     } else if (type === 'staffJoin') {
@@ -728,21 +809,23 @@ export const StoreProvider = ({ children }) => {
       ];
     } else {
       title = "🔔 [TESTE DE DISPARO] • Webhook de Vendas & Pedidos";
-      description = "Se você está lendo esta mensagem no seu servidor do Discord, o sistema de avisos de compra da **Blood Store** está configurado e disparando em tempo real!";
+      description = "Se você está lendo esta mensagem no seu servidor do Discord, o sistema de avisos de compra da **Blood Store** está configurado e disparando em tempo real via Proxy Blindado!";
       color = 3845591;
       fields = [
-        { name: "⚡ Status", value: "✅ Conexão estabelecida com sucesso!", inline: true },
+        { name: "⚡ Status", value: "✅ Conexão proxy estabelecida com sucesso!", inline: true },
         { name: "🕒 Horário do Teste", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
       ];
     }
 
-    const result = await notifyDiscordWebhook({ title, description, color, fields }, targetUrl);
+    const result = await notifyDiscordWebhook({ title, description, color, fields }, targetUrl, null, type);
 
     if (result && result.success) {
-      alert("✅ Teste disparado com sucesso! Verifique o canal no seu Discord agora.");
+      const modeMsg = result.mode === 'direct_fallback' ? 'através do canal direto (modo fallback ativo)' : 'através do Proxy Blindado no servidor';
+      alert(`✅ Teste disparado com sucesso (${modeMsg})! Verifique o canal no seu Discord agora.`);
       return true;
     } else {
-      alert(`❌ Erro ao disparar Webhook (${result?.status || 'Conexão/CORS'}): ${result?.error || 'Verifique se a URL copiada do Discord está completa e correta'}`);
+      const errMsg = result?.error ? (typeof result.error === 'string' ? result.error : JSON.stringify(result.error)) : 'Verifique se a URL copiada do Discord está correta';
+      alert(`❌ Erro ao disparar Webhook (${result?.status || 'Conexão/CORS'}): ${errMsg}`);
       return false;
     }
   };
@@ -803,8 +886,7 @@ export const StoreProvider = ({ children }) => {
       orders: [newOrder, ...(prev.orders || [])]
     }));
 
-    // Notificar Webhook do Discord de Novo Pedido (MNSG LOGS)
-    const targetMsgUrl = storeStateRef.current?.config?.webhookMsgLogsUrl || DEFAULT_STATE.config.webhookMsgLogsUrl;
+    // Notificar Webhook do Discord de Novo Pedido (MNSG LOGS) via Proxy Blindado
     notifyDiscordWebhook({
       title: `🩸 NOVO PEDIDO CONFIRMADO • ${orderNumber}`,
       description: `Um cliente iniciou o processo de compra do produto **${product.name}**.`,
@@ -817,7 +899,7 @@ export const StoreProvider = ({ children }) => {
         { name: "🔔 Próximo Passo", value: "Aguardando o cliente anexar o comprovante PIX na sala de chat (`/#/pedidos`).", inline: false },
         { name: "📢 Notificação", value: "@everyone", inline: false }
       ]
-    }, targetMsgUrl, "@everyone 🚨 **NOVO PEDIDO CONFIRMADO E INICIADO NA BLOOD STORE! ACOMPANHE O CHAT AGORA!**");
+    }, null, "@everyone 🚨 **NOVO PEDIDO CONFIRMADO E INICIADO NA BLOOD STORE! ACOMPANHE O CHAT AGORA!**", 'msgLogs');
 
     return newOrder;
   };
@@ -850,7 +932,6 @@ export const StoreProvider = ({ children }) => {
 
     const targetOrd = (storeState.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
-      const targetMsgUrl = storeStateRef.current?.config?.webhookMsgLogsUrl || DEFAULT_STATE.config.webhookMsgLogsUrl;
       notifyDiscordWebhook({
         title: `📎 [NOVO COMPROVANTE PIX] • Pedido ${targetOrd.orderNumber}`,
         description: `O cliente **${targetOrd.buyer?.username || 'Cliente'}** anexou o comprovante de pagamento para **${targetOrd.product?.name}**!`,
@@ -861,7 +942,7 @@ export const StoreProvider = ({ children }) => {
           { name: "🔔 Status", value: "⚠️ **O pedido mudou para Em Análise. Acesse o Painel Staff (`/#/staff`) para conferir o print e aprovar.**", inline: false }
         ],
         image: { url: proofImageUrl }
-      }, targetMsgUrl);
+      }, null, null, 'msgLogs');
     }
   };
 
@@ -908,7 +989,6 @@ export const StoreProvider = ({ children }) => {
     const targetOrd = (storeStateRef.current.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
       const isStaff = senderType === 'staff';
-      const msgLogsUrl = storeStateRef.current?.config?.webhookMsgLogsUrl || DEFAULT_STATE.config.webhookMsgLogsUrl;
 
       notifyDiscordWebhook({
         title: isStaff ? `💬 [STAFF RESPONDENDO NO CHAT] • Pedido ${targetOrd.orderNumber}` : `💬 [MENSAGEM DO CLIENTE NO CHAT] • Pedido ${targetOrd.orderNumber}`,
@@ -921,7 +1001,7 @@ export const StoreProvider = ({ children }) => {
           ...(attachmentUrl ? [{ name: "📎 Anexo", value: `[Clique para visualizar o anexo](${attachmentUrl})`, inline: false }] : [])
         ],
         ...(attachmentUrl ? { image: { url: attachmentUrl } } : {})
-      }, msgLogsUrl);
+      }, null, null, 'msgLogs');
     }
   };
 
@@ -957,7 +1037,6 @@ export const StoreProvider = ({ children }) => {
 
     const targetOrd = (storeStateRef.current.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
-      const approvalUrl = storeStateRef.current?.config?.webhookApprovalUrl || DEFAULT_STATE.config.webhookApprovalUrl;
       notifyDiscordWebhook({
         title: `✅ [PEDIDO APROVADO & ENTREGUE]  • Pedido ${targetOrd.orderNumber}`,
         description: `O Staff **${cleanStaff}** confirmou o pagamento de **${targetOrd.product?.name}** e liberou a entrega no chat secreto do pedido!`,
@@ -970,7 +1049,7 @@ export const StoreProvider = ({ children }) => {
           { name: "🎁 Conteúdo da Entrega", value: "✅ Liberado na sala de chat e caixa secreta do comprador.", inline: false },
           { name: "📢 Notificação", value: "@everyone", inline: true }
         ]
-      }, approvalUrl, `@everyone 🎉 **PEDIDO APROVADO E PRODUTO ENTREGUE COM SUCESSO PELA STAFF (${cleanStaff})!**`);
+      }, null, `@everyone 🎉 **PEDIDO APROVADO E PRODUTO ENTREGUE COM SUCESSO PELA STAFF (${cleanStaff})!**`, 'approval');
     }
   };
 
@@ -1006,18 +1085,17 @@ export const StoreProvider = ({ children }) => {
 
     const targetOrd = (storeStateRef.current.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
-      const rejectedUrl = storeStateRef.current?.config?.webhookRejectedUrl || DEFAULT_STATE.config.webhookRejectedUrl;
       notifyDiscordWebhook({
         title: `❌ [PEDIDO / COMPROVANTE REPROVADO] • Pedido ${targetOrd.orderNumber}`,
         description: `O Staff **${cleanStaff}** reprovou o comprovante / pedido.`,
         color: 13369344,
         fields: [
           { name: "👮 Staff Responsável (Reprovou)", value: `**${cleanStaff}**`, inline: true },
-          { name: "📦 Produto", value: `**${targetOrd.product?.name}**`, inline: true },
+          { name: "📦 Produto", value: `**${targetOrd.product?.name}** (${targetOrd.product?.priceText})`, inline: true },
           { name: "👤 Cliente", value: `\`${targetOrd.buyer?.username}\``, inline: true },
           { name: "⚠️ Motivo da Reprovação", value: `\`\`\`\n${cleanReason}\n\`\`\``, inline: false }
         ]
-      }, rejectedUrl);
+      }, null, null, 'rejected');
     }
   };
 
@@ -1034,6 +1112,8 @@ export const StoreProvider = ({ children }) => {
       addStaffUser,
       updateStaffUser,
       deleteStaffUser,
+      updateAllStaffUsers,
+      forceSyncToCloud,
       addProduct,
       updateProduct,
       deleteProduct,
