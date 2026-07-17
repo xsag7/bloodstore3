@@ -210,18 +210,25 @@ export const StoreProvider = ({ children }) => {
     return DEFAULT_STATE;
   });
 
+  const isLocalChangeRef = useRef(false);
+  const lastLocalUpdateRef = useRef(0);
+
+  const markLocalUpdate = () => {
+    isLocalChangeRef.current = true;
+    lastLocalUpdateRef.current = Date.now();
+  };
+
   // --- Sincronização Inicial & Tempo Real (Sem F5) ---
   useEffect(() => {
     const applyCloudData = (data) => {
       if (!data) return;
-      setStoreState(prev => {
-        // Prevenir re-render desnecessário se os dados forem idênticos em JSON
-        if (JSON.stringify(prev.orders) === JSON.stringify(data.orders || []) &&
-            JSON.stringify(prev.products) === JSON.stringify(data.products || []) &&
-            JSON.stringify(prev.config) === JSON.stringify(data.config || prev.config)) {
-          return prev;
-        }
+      // Blindagem Anti-Flicker: Se houve modificação local no chat/pedidos nos últimos 3.5 segundos,
+      // IGNORAR dados da nuvem temporariamente para não piscar a tela nem remover mensagens recém-enviadas!
+      if (Date.now() - lastLocalUpdateRef.current < 3500) {
+        return;
+      }
 
+      setStoreState(prev => {
         const mergedConfig = {
           ...DEFAULT_STATE.config,
           ...(data.config || {}),
@@ -245,6 +252,13 @@ export const StoreProvider = ({ children }) => {
           orders: mergedOrders,
           staffUsers: mergedStaff
         };
+
+        // Comparação profunda total: se o estado da nuvem for idêntico ao estado atual, NÃO atualizar
+        // (evita que o React re-renderize o chat em loop e faça a página piscar/flicker)
+        if (JSON.stringify(prev) === JSON.stringify(cloudState)) {
+          return prev;
+        }
+
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudState));
         } catch (e) {}
@@ -285,7 +299,6 @@ export const StoreProvider = ({ children }) => {
         .channel('public:store_state_realtime')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'store_state' }, (payload) => {
           if (payload.new && payload.new.id === 'global_state') {
-            console.log('⚡ [Realtime Postgres] Nova alteração no banco recebida sem F5!');
             applyCloudData(payload.new);
           } else {
             loadFromCloud();
@@ -297,8 +310,8 @@ export const StoreProvider = ({ children }) => {
       broadcastChannel = supabase
         .channel('bloodstore_live_sync')
         .on('broadcast', { event: 'STATE_CHANGED' }, (payload) => {
-          console.log('💬 [Realtime Broadcast] Mensagem instantânea de chat recebida via WebSocket!');
           if (payload.payload && payload.payload.state) {
+            if (Date.now() - lastLocalUpdateRef.current < 3500) return;
             setStoreState(prev => {
               if (JSON.stringify(prev) === JSON.stringify(payload.payload.state)) return prev;
               return payload.payload.state;
@@ -316,6 +329,7 @@ export const StoreProvider = ({ children }) => {
       bc = new BroadcastChannel('bloodstore_sync_channel');
       bc.onmessage = (event) => {
         if (event.data && event.data.type === 'STATE_UPDATE' && event.data.state) {
+          if (Date.now() - lastLocalUpdateRef.current < 3500) return;
           setStoreState(prev => {
             if (JSON.stringify(prev) === JSON.stringify(event.data.state)) return prev;
             return event.data.state;
@@ -324,10 +338,10 @@ export const StoreProvider = ({ children }) => {
       };
     }
 
-    // 4. Polling rápido de 1.5 segundos como garantia máxima absoluta (sem F5) caso o WebSocket oscile
+    // 4. Polling seguro e calmo de 5 segundos como garantia de backup (evitando sobrecarga e piscadas)
     const interval = setInterval(() => {
       loadFromCloud();
-    }, 1500);
+    }, 5000);
 
     return () => {
       if (channel && supabase) supabase.removeChannel(channel);
@@ -344,6 +358,13 @@ export const StoreProvider = ({ children }) => {
     } catch (e) {
       console.error("Erro ao salvar no LocalStorage:", e);
     }
+
+    // Se a alteração no storeState NÃO veio de uma ação local do usuário (ou seja, veio de uma sincronização de nuvem),
+    // NÃO reenviar para o servidor e NÃO disparar broadcast em loop infinito!
+    if (!isLocalChangeRef.current) {
+      return;
+    }
+    isLocalChangeRef.current = false;
 
     // Broadcast para outras abas abertas no mesmo PC (0ms latency sem F5)
     if (typeof window !== 'undefined' && window.BroadcastChannel) {
@@ -393,6 +414,7 @@ export const StoreProvider = ({ children }) => {
     if (sanitized.slogan) sanitized.slogan = sanitizeString(sanitized.slogan, 200);
     if (sanitized.discordInvite) sanitized.discordInvite = sanitizeString(sanitized.discordInvite, 300);
 
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       config: { ...prev.config, ...sanitized }
@@ -407,6 +429,7 @@ export const StoreProvider = ({ children }) => {
       username: sanitizeString(newUser.username || '', 50),
       name: sanitizeString(newUser.name || '', 100)
     };
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       staffUsers: [...(prev.staffUsers || DEFAULT_STATE.staffUsers), { ...cleanUser, id }]
@@ -418,6 +441,7 @@ export const StoreProvider = ({ children }) => {
     if (cleanFields.username) cleanFields.username = sanitizeString(cleanFields.username, 50);
     if (cleanFields.name) cleanFields.name = sanitizeString(cleanFields.name, 100);
 
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).map(u => u.id === id ? { ...u, ...cleanFields } : u)
@@ -425,6 +449,7 @@ export const StoreProvider = ({ children }) => {
   };
 
   const deleteStaffUser = (id) => {
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).filter(u => u.id !== id && u.username !== 'xsag')
@@ -439,6 +464,7 @@ export const StoreProvider = ({ children }) => {
       name: sanitizeString(newProd.name || '', 150),
       priceText: sanitizeString(newProd.priceText || '', 30)
     };
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       products: [...prev.products, { ...cleanProd, id }]
@@ -450,6 +476,7 @@ export const StoreProvider = ({ children }) => {
     if (cleanFields.name) cleanFields.name = sanitizeString(cleanFields.name, 150);
     if (cleanFields.priceText) cleanFields.priceText = sanitizeString(cleanFields.priceText, 30);
 
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       products: prev.products.map(p => p.id === id ? { ...p, ...cleanFields } : p)
@@ -457,6 +484,7 @@ export const StoreProvider = ({ children }) => {
   };
 
   const deleteProduct = (id) => {
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       products: prev.products.filter(p => p.id !== id)
@@ -465,6 +493,7 @@ export const StoreProvider = ({ children }) => {
 
   // Funções CRUD de Termos
   const updateTerms = (updatedTerms) => {
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       terms: updatedTerms
@@ -472,11 +501,13 @@ export const StoreProvider = ({ children }) => {
   };
 
   const resetToDefaults = () => {
+    markLocalUpdate();
     setStoreState(DEFAULT_STATE);
   };
 
   // --- Autenticação Discord (Simulada/Persistida) ---
   const loginWithDiscord = (userData) => {
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       currentUser: userData
@@ -484,6 +515,7 @@ export const StoreProvider = ({ children }) => {
   };
 
   const logout = () => {
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       currentUser: null
@@ -566,6 +598,7 @@ export const StoreProvider = ({ children }) => {
       ]
     };
 
+    markLocalUpdate();
     setStoreState(prev => ({
       ...prev,
       orders: [newOrder, ...(prev.orders || [])]
@@ -590,6 +623,7 @@ export const StoreProvider = ({ children }) => {
 
   const sendOrderProof = (orderId, proofImageUrl) => {
     const nowStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    markLocalUpdate();
     setStoreState(prev => {
       const updatedOrders = (prev.orders || []).map(ord => {
         if (ord.id !== orderId) return ord;
@@ -645,6 +679,7 @@ export const StoreProvider = ({ children }) => {
     if (!cleanText && !attachmentUrl) return;
 
     const nowStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    markLocalUpdate();
     setStoreState(prev => {
       const updatedOrders = (prev.orders || []).map(ord => {
         if (ord.id !== orderId) return ord;
@@ -688,6 +723,7 @@ export const StoreProvider = ({ children }) => {
     const cleanStaff = sanitizeString(staffName || "Staff Blood Store", 100);
     const nowStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+    markLocalUpdate();
     setStoreState(prev => {
       const updatedOrders = (prev.orders || []).map(ord => {
         if (ord.id !== orderId) return ord;
@@ -729,6 +765,7 @@ export const StoreProvider = ({ children }) => {
     const cleanStaff = sanitizeString(staffName || "Staff Blood Store", 100);
     const nowStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+    markLocalUpdate();
     setStoreState(prev => {
       const updatedOrders = (prev.orders || []).map(ord => {
         if (ord.id !== orderId) return ord;

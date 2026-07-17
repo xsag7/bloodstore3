@@ -604,7 +604,12 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                                   {msg.attachment && (
                                     <div style={{ marginTop: '8px' }}>
                                       <a href={msg.attachment} target="_blank" rel="noopener noreferrer">
-                                        <img src={msg.attachment} alt="Anexo" style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '6px', border: '1px solid #3a3a4e' }} />
+                                        <img 
+                                          src={msg.attachment} 
+                                          alt="Anexo" 
+                                          onLoad={() => adminChatEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                                          style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '6px', border: '1px solid #3a3a4e', display: 'block' }} 
+                                        />
                                       </a>
                                     </div>
                                   )}

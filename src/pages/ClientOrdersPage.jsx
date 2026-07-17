@@ -428,7 +428,12 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
                       {msg.attachment && (
                         <div style={{ marginTop: '10px' }}>
                           <a href={msg.attachment} target="_blank" rel="noopener noreferrer">
-                            <img src={msg.attachment} alt="Anexo" style={{ maxWidth: '100%', maxHeight: '220px', borderRadius: '6px', border: '1px solid #3a3a4e', objectFit: 'cover' }} />
+                            <img 
+                              src={msg.attachment} 
+                              alt="Anexo" 
+                              onLoad={() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                              style={{ maxWidth: '100%', maxHeight: '220px', borderRadius: '6px', border: '1px solid #3a3a4e', objectFit: 'cover', display: 'block' }} 
+                            />
                           </a>
                         </div>
                       )}
