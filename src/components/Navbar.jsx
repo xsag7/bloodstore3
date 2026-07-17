@@ -35,6 +35,17 @@ export const Navbar = ({ onOpenAdmin }) => {
         </nav>
 
         <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            onClick={() => {
+              if (onOpenAdmin) onOpenAdmin();
+              else window.location.hash = '#/staff';
+            }} 
+            className="btn-admin-nav"
+            title="Acessar Painel Staff"
+          >
+            <i className="fa-solid fa-user-shield"></i> Staff
+          </button>
+
           <a 
             href={config.discordInvite || "https://discord.gg/Gvbg5WYPBP"} 
             target="_blank" 

@@ -36,11 +36,6 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       adminChatContainerRef.current.scrollTop = adminChatContainerRef.current.scrollHeight;
     }
   };
-
-  useEffect(() => {
-    scrollToAdminBottom();
-  }, [orders, selectedAdminOrderId]);
-
   // Estados da aba de Gestão de Pedidos / Chat ao Vivo
   const [selectedAdminOrderId, setSelectedAdminOrderId] = useState(null);
   const [adminChatInput, setAdminChatInput] = useState('');
@@ -48,6 +43,10 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   const [deliveryInput, setDeliveryInput] = useState('');
   const [rejectReasonInput, setRejectReasonInput] = useState('');
   const [orderFilter, setOrderFilter] = useState('all');
+
+  useEffect(() => {
+    scrollToAdminBottom();
+  }, [orders, selectedAdminOrderId]);
 
   const handleAdminChatFileUpload = async (e, selOrd) => {
     const file = e.target.files[0];
