@@ -204,3 +204,21 @@ EXCEPTION
   WHEN OTHERS THEN
     RAISE NOTICE 'A publicação supabase_realtime pode não existir ou já conter a tabela.';
 END $$;
+
+-- 8. Criação de Bucket Público para Comprovantes PIX e Imagens do Chat (Supabase Storage)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('receipts', 'receipts', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Políticas de Acesso Público para o Bucket 'receipts'
+DROP POLICY IF EXISTS "Permitir upload público de comprovantes" ON storage.objects;
+CREATE POLICY "Permitir upload público de comprovantes"
+ON storage.objects FOR INSERT
+TO public
+WITH CHECK (bucket_id = 'receipts');
+
+DROP POLICY IF EXISTS "Permitir visualização pública de comprovantes" ON storage.objects;
+CREATE POLICY "Permitir visualização pública de comprovantes"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'receipts');

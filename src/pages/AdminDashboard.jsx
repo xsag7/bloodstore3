@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
+import { compressAndUploadImage } from '../lib/supabase';
+import { formatChatMessage } from '../lib/security';
 
 export const AdminDashboard = ({ onExitAdmin }) => {
   const { 
@@ -39,9 +41,31 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   // Estados da aba de Gestão de Pedidos / Chat ao Vivo
   const [selectedAdminOrderId, setSelectedAdminOrderId] = useState(null);
   const [adminChatInput, setAdminChatInput] = useState('');
+  const [uploadingAdminChatImg, setUploadingAdminChatImg] = useState(false);
   const [deliveryInput, setDeliveryInput] = useState('');
   const [rejectReasonInput, setRejectReasonInput] = useState('');
   const [orderFilter, setOrderFilter] = useState('all');
+
+  const handleAdminChatFileUpload = async (e, selOrd) => {
+    const file = e.target.files[0];
+    if (!file || !selOrd) return;
+
+    setUploadingAdminChatImg(true);
+    try {
+      const optimizedUrl = await compressAndUploadImage(file);
+      if (optimizedUrl) {
+        addOrderMessage(selOrd.id, currentStaff?.username || "Staff Blood Store", "staff", adminChatInput.trim() || "📎 Imagem anexa pelo Staff", optimizedUrl);
+        setAdminChatInput('');
+      } else {
+        alert('❌ Erro ao processar anexo de imagem do Staff.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erro ao anexar foto: ' + err.message);
+    } finally {
+      setUploadingAdminChatImg(false);
+    }
+  };
 
   // Form states para Novo Produto
   const [newProdName, setNewProdName] = useState('');
@@ -564,7 +588,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                               return (
                                 <div key={msg.id} style={{ alignSelf: 'center', background: '#1a1a28', border: '1px dashed #3c3c54', borderRadius: '6px', padding: '8px 14px', maxWidth: '80%', textAlign: 'center', fontSize: '0.82rem', color: '#a0a0b0' }}>
                                   <span style={{ fontSize: '0.72rem', color: '#78788c', display: 'block', marginBottom: '2px' }}>{msg.timestamp} • Sistema</span>
-                                  {msg.text}
+                                  {formatChatMessage(msg.text)}
                                 </div>
                               );
                             }
@@ -576,7 +600,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                                   <span style={{ fontSize: '0.7rem', color: '#78788c' }}>{msg.timestamp}</span>
                                 </div>
                                 <div style={{ background: isStaff ? '#261414' : '#1c1e30', border: isStaff ? '1px solid #6b1d1d' : '1px solid #3c3e62', borderRadius: '8px', padding: '10px 14px', color: '#fff', fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>
-                                  {msg.text}
+                                  {formatChatMessage(msg.text)}
                                   {msg.attachment && (
                                     <div style={{ marginTop: '8px' }}>
                                       <a href={msg.attachment} target="_blank" rel="noopener noreferrer">
@@ -599,8 +623,12 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                             addOrderMessage(selOrd.id, currentStaff?.username || "Staff Blood Store", "staff", adminChatInput.trim());
                             setAdminChatInput('');
                           }} 
-                          style={{ padding: '12px 18px', background: '#161620', borderTop: '1px solid #2a0c0c', display: 'flex', gap: '10px' }}
+                          style={{ padding: '12px 18px', background: '#161620', borderTop: '1px solid #2a0c0c', display: 'flex', gap: '10px', alignItems: 'center' }}
                         >
+                          <label style={{ background: uploadingAdminChatImg ? '#eab308' : '#262638', color: '#fff', padding: '10px 14px', borderRadius: '6px', cursor: uploadingAdminChatImg ? 'wait' : 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #3e3e5c', whiteSpace: 'nowrap' }}>
+                            <i className={uploadingAdminChatImg ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-paperclip text-red"}></i> {uploadingAdminChatImg ? 'Enviando...' : 'Anexar Foto'}
+                            <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingAdminChatImg} onChange={(e) => handleAdminChatFileUpload(e, selOrd)} />
+                          </label>
                           <input 
                             type="text" 
                             className="form-input" 
@@ -609,7 +637,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                             onChange={(e) => setAdminChatInput(e.target.value)}
                             style={{ flex: 1, background: '#1a1a26' }}
                           />
-                          <button type="submit" className="btn-complete-order" style={{ width: 'auto', padding: '0 20px', background: '#cc0000', border: 'none', borderRadius: '6px' }}>
+                          <button type="submit" disabled={uploadingAdminChatImg} className="btn-complete-order" style={{ width: 'auto', padding: '0 20px', background: '#cc0000', border: 'none', borderRadius: '6px' }}>
                             <i className="fa-solid fa-paper-plane"></i> Enviar
                           </button>
                         </form>

@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../context/StoreContext';
+import { compressAndUploadImage } from '../lib/supabase';
+import { formatChatMessage } from '../lib/security';
 
 export const ClientOrdersPage = ({ onBackToStore }) => {
   const { config, currentUser, orders, sendOrderProof, addOrderMessage } = useStore();
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [chatInput, setChatInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const [uploadingChatImg, setUploadingChatImg] = useState(false);
   const chatBottomRef = useRef(null);
 
   const clientName = currentUser?.username || localStorage.getItem('bloodstore_client_name') || '';
@@ -17,27 +21,32 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
     }
   })();
 
-  // Filtrar pedidos do usuário por IDs salvos, nome de contato ou busca
-  const myOrders = orders.filter(o => {
-    if (savedOrderIds.includes(o.id)) return true;
-    if (clientName && o.buyer?.username?.toLowerCase() === clientName.toLowerCase()) return true;
-    if (clientName && o.contactValue?.toLowerCase() === clientName.toLowerCase()) return true;
-    if (searchQuery.trim() && (
-      o.orderNumber?.toLowerCase().includes(searchQuery.trim().toLowerCase()) || 
-      o.contactValue?.toLowerCase().includes(searchQuery.trim().toLowerCase()) || 
-      o.buyer?.username?.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
-      o.product?.name?.toLowerCase().includes(searchQuery.trim().toLowerCase())
-    )) return true;
-    return false;
+  const userOrders = (orders || []).filter(ord => {
+    const isOwnerBySavedId = savedOrderIds.includes(ord.id);
+    const isOwnerByContact = clientName && (
+      (ord.contactValue && ord.contactValue.toLowerCase() === clientName.toLowerCase()) ||
+      (ord.buyer?.username && ord.buyer.username.toLowerCase() === clientName.toLowerCase())
+    );
+    const isOwner = isOwnerBySavedId || isOwnerByContact;
+
+    if (!isOwner) return false;
+    if (!searchQuery.trim()) return true;
+
+    const query = searchQuery.toLowerCase();
+    return (
+      ord.orderNumber?.toLowerCase().includes(query) ||
+      ord.product?.name?.toLowerCase().includes(query) ||
+      ord.status?.toLowerCase().includes(query)
+    );
   });
 
-  const selectedOrder = orders.find(o => o.id === selectedOrderId) || myOrders[0] || null;
+  const selectedOrder = userOrders.find(o => o.id === selectedOrderId) || userOrders[0];
 
   useEffect(() => {
-    if (myOrders.length > 0 && !selectedOrderId) {
-      setSelectedOrderId(myOrders[0].id);
+    if (userOrders.length > 0 && !selectedOrderId) {
+      setSelectedOrderId(userOrders[0].id);
     }
-  }, [myOrders, selectedOrderId]);
+  }, [userOrders, selectedOrderId]);
 
   useEffect(() => {
     if (chatBottomRef.current) {
@@ -45,16 +54,47 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
     }
   }, [selectedOrder?.messages]);
 
-  const handleProofUpload = (e) => {
+  const handleProofUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !selectedOrder) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      sendOrderProof(selectedOrder.id, event.target.result);
-      alert('✅ Comprovante PIX enviado! O status mudou para "Em Análise" e o Staff foi notificado no chat.');
-    };
-    reader.readAsDataURL(file);
+    setUploadingProof(true);
+    try {
+      const optimizedUrl = await compressAndUploadImage(file);
+      if (optimizedUrl) {
+        sendOrderProof(selectedOrder.id, optimizedUrl);
+        alert('✅ Comprovante PIX otimizado com sucesso! O status mudou para "Em Análise" e o Staff foi notificado.');
+      } else {
+        alert('❌ Erro ao processar a imagem. Tente novamente com outro formato.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erro ao subir foto: ' + err.message);
+    } finally {
+      setUploadingProof(false);
+    }
+  };
+
+  const handleChatFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !selectedOrder) return;
+
+    setUploadingChatImg(true);
+    try {
+      const optimizedUrl = await compressAndUploadImage(file);
+      if (optimizedUrl) {
+        const senderName = currentUser?.username || localStorage.getItem('bloodstore_client_name') || selectedOrder.contactValue || 'Cliente';
+        addOrderMessage(selectedOrder.id, senderName, 'client', chatInput.trim() || '📎 Imagem / Print enviado', optimizedUrl);
+        setChatInput('');
+      } else {
+        alert('❌ Erro ao processar imagem anexa.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erro ao anexar foto: ' + err.message);
+    } finally {
+      setUploadingChatImg(false);
+    }
   };
 
   const handleSendMessage = (e) => {
@@ -327,9 +367,9 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
                     </a>
                   )}
 
-                  <label style={{ background: '#22c55e', color: '#fff', padding: '9px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 0 12px rgba(34, 197, 94, 0.3)' }}>
-                    <i className="fa-solid fa-cloud-arrow-up"></i> {selectedOrder.proofImage ? 'Reenviar' : 'Subir Comprovante'}
-                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleProofUpload} />
+                  <label style={{ background: uploadingProof ? '#eab308' : '#22c55e', color: '#fff', padding: '9px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '0.85rem', cursor: uploadingProof ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 0 12px rgba(34, 197, 94, 0.3)', opacity: uploadingProof ? 0.8 : 1 }}>
+                    <i className={uploadingProof ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-cloud-arrow-up"}></i> {uploadingProof ? 'Otimizando & Enviando...' : (selectedOrder.proofImage ? 'Reenviar Foto' : 'Subir Comprovante')}
+                    <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingProof} onChange={handleProofUpload} />
                   </label>
                 </div>
               </div>
@@ -346,7 +386,7 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
                   return (
                     <div key={msg.id} style={{ alignSelf: 'center', background: '#1b1b28', border: '1px dashed #3a3a52', borderRadius: '8px', padding: '12px 18px', maxWidth: '85%', textAlign: 'center', fontSize: '0.85rem', color: '#c0c0d0', margin: '6px 0' }}>
                       <span style={{ fontSize: '0.75rem', color: '#78788c', display: 'block', marginBottom: '4px' }}>{msg.timestamp} • Sistema</span>
-                      <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                      <div style={{ whiteSpace: 'pre-wrap' }}>{formatChatMessage(msg.text)}</div>
                     </div>
                   );
                 }
@@ -383,7 +423,7 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
                         whiteSpace: 'pre-wrap'
                       }}
                     >
-                      {msg.text}
+                      {formatChatMessage(msg.text)}
                       {msg.attachment && (
                         <div style={{ marginTop: '10px' }}>
                           <a href={msg.attachment} target="_blank" rel="noopener noreferrer">
@@ -399,11 +439,15 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
             </div>
 
             {/* INPUT DE MENSAGEM DO CHAT */}
-            <form onSubmit={handleSendMessage} style={{ padding: '14px 20px', background: '#161620', borderTop: '1px solid #2a0c0c', display: 'flex', gap: '12px' }}>
+            <form onSubmit={handleSendMessage} style={{ padding: '14px 20px', background: '#161620', borderTop: '1px solid #2a0c0c', display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <label style={{ background: uploadingChatImg ? '#eab308' : '#262638', color: '#fff', padding: '10px 14px', borderRadius: '6px', cursor: uploadingChatImg ? 'wait' : 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #3e3e5c', whiteSpace: 'nowrap' }}>
+                <i className={uploadingChatImg ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-paperclip text-red"}></i> {uploadingChatImg ? 'Enviando...' : 'Anexar Foto'}
+                <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingChatImg} onChange={handleChatFileUpload} />
+              </label>
               <input 
                 type="text" 
                 className="form-input" 
-                placeholder="Digite uma mensagem para o Staff ou tire dúvidas sobre o pedido..." 
+                placeholder="Digite uma mensagem ou envie print/comprovante para o Staff..." 
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 style={{ flex: 1, background: '#1a1a26', border: '1px solid #2e2e42' }}
@@ -411,6 +455,7 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
               <button 
                 type="submit" 
                 className="btn-complete-order" 
+                disabled={uploadingChatImg}
                 style={{ width: 'auto', padding: '0 22px', background: '#cc0000', border: 'none', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <span>Enviar</span>

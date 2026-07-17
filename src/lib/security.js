@@ -1,3 +1,5 @@
+import React from 'react';
+
 /**
  * Módulo de Cibersegurança & Proteção Anti-Hacking • Blood Store
  * 
@@ -113,4 +115,51 @@ export const validateOrderPayload = (order) => {
   }
 
   return { valid: true };
+};
+
+// 4. FORMATADOR SEGURO DE MENSAGENS (MARKDOWN INLINE -> JSX REACT SEM XSS)
+export const formatChatMessage = (text) => {
+  if (!text || typeof text !== 'string') return null;
+
+  const lines = text.split('\n');
+  return lines.map((line, lineIdx) => {
+    // Regex que captura **negrito**, `código` ou URLs https://...
+    const tokens = line.split(/(\*\*.*?\*\*|`.*?`|https?:\/\/[^\s]+)/g);
+
+    const children = tokens.map((token, idx) => {
+      if (!token) return null;
+
+      if (token.startsWith('**') && token.endsWith('**') && token.length >= 4) {
+        return React.createElement(
+          'strong',
+          { key: idx, style: { fontWeight: '800', color: '#fff', textShadow: '0 0 1px rgba(255,255,255,0.4)' } },
+          token.slice(2, -2)
+        );
+      }
+
+      if (token.startsWith('`') && token.endsWith('`') && token.length >= 2) {
+        return React.createElement(
+          'code',
+          { key: idx, style: { background: 'rgba(0,0,0,0.45)', padding: '2px 7px', borderRadius: '4px', fontFamily: 'monospace', color: '#38bdf8', fontSize: '0.88em', border: '1px solid rgba(56,189,248,0.2)' } },
+          token.slice(1, -1)
+        );
+      }
+
+      if (token.match(/^https?:\/\//)) {
+        return React.createElement(
+          'a',
+          { key: idx, href: token, target: '_blank', rel: 'noopener noreferrer', style: { color: '#38bdf8', textDecoration: 'underline' } },
+          token
+        );
+      }
+
+      return React.createElement('span', { key: idx }, token);
+    });
+
+    if (lineIdx < lines.length - 1) {
+      children.push(React.createElement('br', { key: `br-${lineIdx}` }));
+    }
+
+    return React.createElement(React.Fragment, { key: lineIdx }, children);
+  });
 };
