@@ -21,7 +21,8 @@ export const AdminDashboard = ({ onExitAdmin }) => {
     updateProduct, 
     deleteProduct, 
     updateTerms,
-    resetToDefaults 
+    resetToDefaults,
+    testDiscordWebhook
   } = useStore();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -1012,9 +1013,20 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                     value={cfgWebhookUrl}
                     onChange={(e) => setCfgWebhookUrl(e.target.value)}
                   />
-                  <small style={{ color: '#78788c', display: 'block', marginTop: '4px' }}>
-                    Sempre que um cliente gerar o PIX no checkout, uma Embed Vermelha será enviada automaticamente para esta URL!
-                  </small>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button 
+                      type="button"
+                      onClick={() => testDiscordWebhook(cfgWebhookUrl)}
+                      style={{ background: '#5865F2', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px', transition: 'background 0.2s' }}
+                      onMouseOver={(e) => e.currentTarget.style.background = '#4752C4'}
+                      onMouseOut={(e) => e.currentTarget.style.background = '#5865F2'}
+                    >
+                      <i className="fa-brands fa-discord"></i> Testar Disparo do Webhook Agora
+                    </button>
+                    <small style={{ color: '#78788c', flex: 1, minWidth: '240px' }}>
+                      Sempre que um cliente gerar o PIX no checkout, uma Embed Vermelha será enviada para o seu servidor!
+                    </small>
+                  </div>
                 </div>
 
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>

@@ -210,6 +210,9 @@ export const StoreProvider = ({ children }) => {
     return DEFAULT_STATE;
   });
 
+  const storeStateRef = useRef(storeState);
+  storeStateRef.current = storeState;
+
   const isLocalChangeRef = useRef(false);
   const lastLocalUpdateRef = useRef(0);
 
@@ -523,28 +526,64 @@ export const StoreProvider = ({ children }) => {
   };
 
   // --- Central de Notificações Webhook do Discord ---
-  const notifyDiscordWebhook = async (embedData) => {
-    const url = storeState?.config?.webhookUrl || '';
-    if (!url || typeof url !== 'string' || !url.includes('discord')) return;
+  const notifyDiscordWebhook = async (embedData, overrideUrl = null) => {
+    const url = (overrideUrl || storeStateRef.current?.config?.webhookUrl || '').trim();
+    if (!url || typeof url !== 'string' || !url.toLowerCase().includes('discord')) {
+      console.warn("⚠️ Webhook URL do Discord ausente ou em formato inválido:", url);
+      return false;
+    }
 
+    const storeName = storeStateRef.current?.config?.storeName || 'Blood Store';
     const payload = {
-      username: `${storeState?.config?.storeName || 'Blood Store'} • Sistema Ao Vivo`,
+      username: `${storeName.substring(0, 60)} • Sistema Ao Vivo`,
       avatar_url: "https://i.imgur.com/8N40WzN.png",
       embeds: [{
         ...embedData,
-        footer: { text: `${storeState?.config?.storeName || 'Blood Store'} • Sistema Estilo GGMAX` },
+        footer: { text: `${storeName} • Sistema Estilo GGMAX` },
         timestamp: new Date().toISOString()
       }]
     };
 
     try {
-      await fetch(url.trim(), {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        console.error(`❌ Erro no Webhook do Discord (HTTP ${res.status}):`, errText);
+        return { success: false, status: res.status, error: errText };
+      }
+      return { success: true };
     } catch (err) {
-      console.error("❌ Erro ao enviar notificação para o Webhook do Discord:", err);
+      console.error("❌ Erro de rede/CORS ao enviar notificação para o Webhook do Discord:", err);
+      return { success: false, error: err.message };
+    }
+  };
+
+  const testDiscordWebhook = async (testUrl) => {
+    const targetUrl = (testUrl || storeStateRef.current?.config?.webhookUrl || '').trim();
+    if (!targetUrl) {
+      alert("⚠️ Insira primeiro a URL do Webhook do Discord no campo e tente novamente!");
+      return false;
+    }
+    const result = await notifyDiscordWebhook({
+      title: "🔔 [TESTE DE DISPARO] • Webhook Conectado!",
+      description: "Se você está lendo esta mensagem no seu servidor do Discord, o sistema de avisos de compra da **Blood Store** está configurado e disparando em tempo real!",
+      color: 3845591,
+      fields: [
+        { name: "⚡ Status", value: "✅ Conexão estabelecida com sucesso!", inline: true },
+        { name: "🕒 Horário do Teste", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
+      ]
+    }, targetUrl);
+
+    if (result && result.success) {
+      alert("✅ Teste de Webhook disparado com sucesso! Verifique o canal no seu Discord agora.");
+      return true;
+    } else {
+      alert(`❌ Erro ao disparar Webhook (${result?.status || 'Conexão/CORS'}): ${result?.error || 'Verifique se a URL copiada do Discord está completa e correta'}`);
+      return false;
     }
   };
 
@@ -827,7 +866,8 @@ export const StoreProvider = ({ children }) => {
       sendOrderProof,
       addOrderMessage,
       approveAndDeliverOrder,
-      rejectOrder
+      rejectOrder,
+      testDiscordWebhook
     }}>
       {children}
     </StoreContext.Provider>
