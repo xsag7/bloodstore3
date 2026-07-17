@@ -30,13 +30,16 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   const [passwordInput, setPasswordInput] = useState('');
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'products' | 'config' | 'terms' | 'staff'
 
-  const adminChatEndRef = useRef(null);
+  const adminChatContainerRef = useRef(null);
+  const scrollToAdminBottom = () => {
+    if (adminChatContainerRef.current) {
+      adminChatContainerRef.current.scrollTop = adminChatContainerRef.current.scrollHeight;
+    }
+  };
 
   useEffect(() => {
-    if (adminChatEndRef.current) {
-      adminChatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [orders]);
+    scrollToAdminBottom();
+  }, [orders, selectedAdminOrderId]);
 
   // Estados da aba de Gestão de Pedidos / Chat ao Vivo
   const [selectedAdminOrderId, setSelectedAdminOrderId] = useState(null);
@@ -579,7 +582,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                         )}
 
                         {/* ÁREA MENSAGENS E CHAT DO STAFF COM O CLIENTE */}
-                        <div style={{ flex: 1, padding: '18px 20px', overflowY: 'auto', maxHeight: '380px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#12121a' }}>
+                        <div ref={adminChatContainerRef} style={{ flex: 1, padding: '18px 20px', overflowY: 'auto', maxHeight: '380px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#12121a' }}>
                           {selOrd.messages && selOrd.messages.map((msg) => {
                             const isSystem = msg.type === 'system';
                             const isStaff = msg.type === 'staff';
@@ -607,7 +610,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                                         <img 
                                           src={msg.attachment} 
                                           alt="Anexo" 
-                                          onLoad={() => adminChatEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                                          onLoad={scrollToAdminBottom}
                                           style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '6px', border: '1px solid #3a3a4e', display: 'block' }} 
                                         />
                                       </a>
@@ -617,7 +620,6 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                               </div>
                             );
                           })}
-                          <div ref={adminChatEndRef} />
                         </div>
 
                         {/* INPUT PARA STAFF RESPONDER NO CHAT */}

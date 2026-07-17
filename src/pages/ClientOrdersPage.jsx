@@ -10,7 +10,12 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [uploadingProof, setUploadingProof] = useState(false);
   const [uploadingChatImg, setUploadingChatImg] = useState(false);
-  const chatBottomRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  };
 
   const clientName = currentUser?.username || localStorage.getItem('bloodstore_client_name') || '';
   const savedOrderIds = (() => {
@@ -50,9 +55,7 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
   }, [userOrders, selectedOrderId]);
 
   useEffect(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToBottom();
   }, [selectedOrder?.messages]);
 
   const handleProofUpload = async (e) => {
@@ -377,7 +380,7 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
             )}
 
             {/* ÁREA DE CHAT EM TEMPO REAL ESTILO GGMAX */}
-            <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', background: '#12121a' }}>
+            <div ref={chatContainerRef} style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', background: '#12121a' }}>
               {selectedOrder.messages && selectedOrder.messages.map((msg) => {
                 const isSystem = msg.type === 'system';
                 const isStaff = msg.type === 'staff';
@@ -431,7 +434,7 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
                             <img 
                               src={msg.attachment} 
                               alt="Anexo" 
-                              onLoad={() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                              onLoad={scrollToBottom}
                               style={{ maxWidth: '100%', maxHeight: '220px', borderRadius: '6px', border: '1px solid #3a3a4e', objectFit: 'cover', display: 'block' }} 
                             />
                           </a>
@@ -441,7 +444,6 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
                   </div>
                 );
               })}
-              <div ref={chatBottomRef} />
             </div>
 
             {/* INPUT DE MENSAGEM DO CHAT */}
