@@ -3,6 +3,7 @@ import { StoreProvider } from './context/StoreContext';
 import { StoreFront } from './pages/StoreFront';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { CheckoutPage } from './pages/CheckoutPage';
+import { ClientOrdersPage } from './pages/ClientOrdersPage';
 import './index.css';
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
     const path = window.location.pathname;
     if (hash.startsWith('#/staff') || path.startsWith('/staff')) return 'staff';
     if (hash.startsWith('#/checkout') || path.startsWith('/checkout')) return 'checkout';
+    if (hash.startsWith('#/pedidos') || path.startsWith('/pedidos')) return 'orders';
     return 'store';
   });
 
@@ -21,6 +23,8 @@ export default function App() {
         setCurrentRoute('staff');
       } else if (hash.startsWith('#/checkout')) {
         setCurrentRoute('checkout');
+      } else if (hash.startsWith('#/pedidos')) {
+        setCurrentRoute('orders');
       } else {
         setCurrentRoute('store');
       }
@@ -53,6 +57,9 @@ export default function App() {
         )}
         {currentRoute === 'checkout' && (
           <CheckoutPage onBackToStore={navigateToStore} />
+        )}
+        {currentRoute === 'orders' && (
+          <ClientOrdersPage onBackToStore={navigateToStore} />
         )}
         {currentRoute === 'store' && (
           <StoreFront onOpenAdmin={navigateToStaff} onOpenCheckout={navigateToCheckout} />

@@ -285,14 +285,14 @@ a {
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
-  gap: 28px;
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+  gap: 20px;
 }
 
 .product-card {
   background-color: #181822;
   border: 1px solid #2a0c0c;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -303,13 +303,13 @@ a {
 
 .product-card:hover {
   border-color: #cc0000;
-  transform: translateY(-8px);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75), 0 0 25px rgba(204, 0, 0, 0.22);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7), 0 0 20px rgba(204, 0, 0, 0.2);
 }
 
 .product-img-box {
   width: 100%;
-  height: 175px;
+  height: 135px;
   background-color: #12121a;
   border-bottom: 1px solid #2a0c0c;
   position: relative;
@@ -327,86 +327,86 @@ a {
 }
 
 .product-card:hover .product-img {
-  transform: scale(1.06);
+  transform: scale(1.05);
 }
 
 .product-icon-fallback {
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   background-color: rgba(204, 0, 0, 0.15);
   border: 1px solid rgba(204, 0, 0, 0.4);
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #cc0000;
-  font-size: 1.8rem;
-  box-shadow: 0 4px 15px rgba(204, 0, 0, 0.2);
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(204, 0, 0, 0.2);
 }
 
 .product-body {
-  padding: 22px 24px;
+  padding: 14px 16px;
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
 .product-title {
-  font-size: 1.28rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #ffffff;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .product-slug {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: #78788c;
   font-family: monospace;
   text-transform: uppercase;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .product-price {
   font-family: 'Poppins', sans-serif;
-  font-size: 1.75rem;
+  font-size: 1.45rem;
   font-weight: 800;
   color: #ffffff;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
   display: flex;
   align-items: baseline;
   gap: 6px;
 }
 
 .product-price span {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #a0a0b0;
   font-weight: 500;
 }
 
 .product-benefits {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   flex: 1;
 }
 
 .benefit-item {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  font-size: 0.88rem;
+  gap: 8px;
+  font-size: 0.82rem;
   color: #c8c8d4;
-  margin-bottom: 9px;
-  line-height: 1.45;
+  margin-bottom: 6px;
+  line-height: 1.35;
 }
 
 .benefit-item i {
   color: #cc0000;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   margin-top: 3px;
   flex-shrink: 0;
 }
 
 .product-footer {
-  padding: 0 24px 24px;
+  padding: 0 16px 16px;
 }
 
 .btn-buy {
@@ -414,9 +414,9 @@ a {
   color: #ffffff;
   font-family: 'Poppins', sans-serif;
   font-weight: 700;
-  font-size: 0.96rem;
+  font-size: 0.88rem;
   text-transform: uppercase;
-  padding: 13px 20px;
+  padding: 10px 16px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
@@ -424,7 +424,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   transition: background-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
 }
 

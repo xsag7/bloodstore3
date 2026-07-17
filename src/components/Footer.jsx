@@ -9,7 +9,7 @@ export const Footer = () => {
       <div className="container footer-inner">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <img 
-            src="/fotos e videos/logo.png" 
+            src={config.logoUrl || "/fotos e videos/BloodstoreLogo1.png"} 
             onError={(e) => {
               e.target.style.display = 'none';
               e.target.nextElementSibling.style.display = 'flex';

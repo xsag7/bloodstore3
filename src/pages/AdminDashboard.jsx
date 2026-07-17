@@ -6,6 +6,14 @@ export const AdminDashboard = ({ onExitAdmin }) => {
     config, 
     products, 
     terms, 
+    orders,
+    staffUsers,
+    addStaffUser,
+    updateStaffUser,
+    deleteStaffUser,
+    addOrderMessage,
+    approveAndDeliverOrder,
+    rejectOrder,
     updateConfig, 
     addProduct, 
     updateProduct, 
@@ -15,9 +23,17 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   } = useStore();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentStaff, setCurrentStaff] = useState(null);
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
-  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'config' | 'terms'
+  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'products' | 'config' | 'terms' | 'staff'
+
+  // Estados da aba de Gestão de Pedidos / Chat ao Vivo
+  const [selectedAdminOrderId, setSelectedAdminOrderId] = useState(null);
+  const [adminChatInput, setAdminChatInput] = useState('');
+  const [deliveryInput, setDeliveryInput] = useState('');
+  const [rejectReasonInput, setRejectReasonInput] = useState('');
+  const [orderFilter, setOrderFilter] = useState('all');
 
   // Form states para Novo Produto
   const [newProdName, setNewProdName] = useState('');
@@ -25,6 +41,8 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   const [newProdImage, setNewProdImage] = useState('/fotos e videos/item.png');
   const [newProdBenefits, setNewProdBenefits] = useState('Entrega ultra rápida\nTotalmente verificado e seguro\nSuporte VIP ao cliente');
   const [newProdIcon, setNewProdIcon] = useState('fa-solid fa-box');
+  const [newProdPixKey, setNewProdPixKey] = useState('');
+  const [newProdQrCodeUrl, setNewProdQrCodeUrl] = useState('');
 
   // Form states para Edição de Produto
   const [editingId, setEditingId] = useState(null);
@@ -32,6 +50,35 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   const [editPrice, setEditPrice] = useState('');
   const [editImage, setEditImage] = useState('');
   const [editBenefits, setEditBenefits] = useState('');
+  const [editPixKey, setEditPixKey] = useState('');
+  const [editQrCodeUrl, setEditQrCodeUrl] = useState('');
+
+  // Form states para Gestão de Sub-Admins / Equipe Staff
+  const [newStaffUser, setNewStaffUser] = useState('');
+  const [newStaffPass, setNewStaffPass] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState('Suporte / Moderador');
+  const [newStaffPerms, setNewStaffPerms] = useState({
+    canManageProducts: false,
+    canManageOrders: true,
+    canManageConfig: false,
+    canManageStaff: false
+  });
+
+  const PRESET_MEDIA_FILES = [
+    { label: "-- Escolha um arquivo da pasta fotos e videos/ --", value: "" },
+    { label: "Bloodstore Logo 1 (PNG)", value: "/fotos e videos/BloodstoreLogo1.png" },
+    { label: "Bloodstore Logo 2 (PNG)", value: "/fotos e videos/BloodstoreLogo2.png" },
+    { label: "Bloodstore Logo Geral (PNG)", value: "/fotos e videos/Bloodstore.png" },
+    { label: "Logo Antiga (logo.png)", value: "/fotos e videos/logo.png" },
+    { label: "Animação de Fundo (animation.mp4)", value: "/fotos e videos/animation.mp4" },
+    { label: "Banner Vídeo (banner.mp4)", value: "/fotos e videos/banner.mp4" },
+    { label: "Imagem 232 (232.png)", value: "/fotos e videos/232.png" },
+    { label: "Produto Robux (robux.png)", value: "/fotos e videos/robux.png" },
+    { label: "Produto Conta 18v (conta18v.png)", value: "/fotos e videos/conta18v.png" },
+    { label: "Produto Minecraft (minecraft.png)", value: "/fotos e videos/minecraft.png" },
+    { label: "Produto Discord Nitro (discord.png)", value: "/fotos e videos/discord.png" },
+    { label: "QR Code PIX (qrcode.png)", value: "/fotos e videos/qrcode.png" }
+  ];
 
   // Form states para Configuração Global
   const [cfgStoreName, setCfgStoreName] = useState(config.storeName);
@@ -39,14 +86,46 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   const [cfgDiscordInvite, setCfgDiscordInvite] = useState(config.discordInvite);
   const [cfgWebhookUrl, setCfgWebhookUrl] = useState(config.webhookUrl);
   const [cfgPixKey, setCfgPixKey] = useState(config.pixKey);
+  const [cfgLogoUrl, setCfgLogoUrl] = useState(config.logoUrl || '/fotos e videos/BloodstoreLogo1.png');
+  const [cfgBannerVideoUrl, setCfgBannerVideoUrl] = useState(config.bannerVideoUrl || '/fotos e videos/animation.mp4');
+
+  const handleFileUpload = (e, setter) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setter(event.target.result);
+      alert(`✅ Arquivo "${file.name}" carregado! A imagem/vídeo está pronta para uso.`);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleLogin = (e) => {
     e.preventDefault();
     const cleanUser = usernameInput.trim().toLowerCase();
-    if ((cleanUser === 'admin' || cleanUser === 'staff') && passwordInput === 'admin123') {
+    const cleanPass = passwordInput.trim();
+
+    // 1. Procura na lista de staffUsers (banco/localStorage)
+    const foundStaff = staffUsers?.find(u => u.username.toLowerCase() === cleanUser && u.password === cleanPass);
+
+    if (foundStaff) {
+      setCurrentStaff(foundStaff);
+      setIsAuthenticated(true);
+    } else if ((cleanUser === 'xsag' && cleanPass === 'penismurcho') || ((cleanUser === 'admin' || cleanUser === 'staff') && cleanPass === 'admin123')) {
+      // 2. Fallback fixo de dono (xsag / penismurcho ou admin123)
+      const fallbackStaff = {
+        id: 'owner_session',
+        username: cleanUser,
+        role: cleanUser === 'xsag' ? 'Dono (Owner)' : 'Administrador Geral',
+        canManageProducts: true,
+        canManageOrders: true,
+        canManageConfig: true,
+        canManageStaff: true
+      };
+      setCurrentStaff(fallbackStaff);
       setIsAuthenticated(true);
     } else {
-      alert('Credenciais inválidas.');
+      alert('⚠️ Credenciais inválidas. Verifique usuário e senha.');
     }
   };
 
@@ -61,11 +140,15 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       priceText: newProdPrice.trim().startsWith('R$') ? newProdPrice.trim() : `R$ ${newProdPrice.trim()}`,
       image: newProdImage.trim(),
       icon: newProdIcon.trim() || 'fa-solid fa-box',
-      benefits: benefitsArray
+      benefits: benefitsArray,
+      pixKey: newProdPixKey.trim() || undefined,
+      qrCodeUrl: newProdQrCodeUrl.trim() || undefined
     });
 
     setNewProdName('');
     setNewProdPrice('');
+    setNewProdPixKey('');
+    setNewProdQrCodeUrl('');
     alert('✅ Produto adicionado e vitrine atualizada instantaneamente no LocalStorage!');
   };
 
@@ -75,6 +158,8 @@ export const AdminDashboard = ({ onExitAdmin }) => {
     setEditPrice(prod.priceText);
     setEditImage(prod.image);
     setEditBenefits(Array.isArray(prod.benefits) ? prod.benefits.join('\n') : prod.benefits);
+    setEditPixKey(prod.pixKey || '');
+    setEditQrCodeUrl(prod.qrCodeUrl || '');
   };
 
   const handleSaveEditProduct = (id) => {
@@ -83,7 +168,9 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       name: editName.trim(),
       priceText: editPrice.trim().startsWith('R$') ? editPrice.trim() : `R$ ${editPrice.trim()}`,
       image: editImage.trim(),
-      benefits: benefitsArray
+      benefits: benefitsArray,
+      pixKey: editPixKey.trim() || undefined,
+      qrCodeUrl: editQrCodeUrl.trim() || undefined
     });
     setEditingId(null);
     alert('✅ Produto atualizado!');
@@ -96,14 +183,37 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       slogan: cfgSlogan.trim(),
       discordInvite: cfgDiscordInvite.trim(),
       webhookUrl: cfgWebhookUrl.trim(),
-      pixKey: cfgPixKey.trim()
+      pixKey: cfgPixKey.trim(),
+      logoUrl: cfgLogoUrl.trim(),
+      bannerVideoUrl: cfgBannerVideoUrl.trim()
     });
-    alert('✅ Configurações globais salvas com sucesso no LocalStorage!');
+    alert('✅ Configurações e mídias globais salvas com sucesso no LocalStorage!');
   };
 
   const handleUpdateTermItem = (id, newTitle, newContent) => {
     const updated = terms.map(t => t.id === id ? { ...t, title: newTitle, content: newContent } : t);
     updateTerms(updated);
+  };
+
+  const handleAddStaffUser = (e) => {
+    e.preventDefault();
+    if (!newStaffUser.trim() || !newStaffPass.trim()) return;
+
+    if (staffUsers?.some(u => u.username.toLowerCase() === newStaffUser.trim().toLowerCase())) {
+      alert('⚠️ Já existe um usuário com este nome!');
+      return;
+    }
+
+    addStaffUser({
+      username: newStaffUser.trim(),
+      password: newStaffPass.trim(),
+      role: newStaffRole,
+      ...newStaffPerms
+    });
+
+    setNewStaffUser('');
+    setNewStaffPass('');
+    alert('✅ Novo membro da equipe Staff criado com sucesso!');
   };
 
   if (!isAuthenticated) {
@@ -117,11 +227,11 @@ export const AdminDashboard = ({ onExitAdmin }) => {
           </div>
           <form onSubmit={handleLogin}>
             <div className="form-group" style={{ textAlign: 'left' }}>
-              <label className="form-label">Usuário</label>
+              <label className="form-label">Usuário / Dono</label>
               <input 
                 type="text" 
                 className="form-input" 
-                placeholder="ex: staff" 
+                placeholder="vaza preta fudida" 
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
                 required 
@@ -133,7 +243,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
               <input 
                 type="password" 
                 className="form-input" 
-                placeholder="••••••••" 
+                placeholder="penismurcho" 
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 required 
@@ -160,10 +270,21 @@ export const AdminDashboard = ({ onExitAdmin }) => {
             <i className="fa-solid fa-shield-halved text-red"></i>
             <span>BLOOD STAFF</span>
           </div>
-          <p style={{ fontSize: '0.78rem', color: '#78788c', marginTop: '4px' }}>Modo de Edição em Tempo Real</p>
+          <div style={{ fontSize: '0.78rem', color: '#78788c', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ background: '#202030', color: '#fff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #333' }}>
+              👤 {currentStaff?.username || 'xsag'} ({currentStaff?.role || 'Admin'})
+            </span>
+          </div>
         </div>
 
         <nav className="admin-nav">
+          <button 
+            className={`admin-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => setActiveTab('orders')}
+            style={{ fontWeight: activeTab === 'orders' ? '700' : '500', color: activeTab === 'orders' ? '#22c55e' : '' }}
+          >
+            <i className="fa-solid fa-box-open"></i> Gestão de Pedidos & Chat ({orders.length})
+          </button>
           <button 
             className={`admin-nav-item ${activeTab === 'products' ? 'active' : ''}`}
             onClick={() => setActiveTab('products')}
@@ -181,6 +302,13 @@ export const AdminDashboard = ({ onExitAdmin }) => {
             onClick={() => setActiveTab('terms')}
           >
             <i className="fa-solid fa-file-contract"></i> Termos e Condições
+          </button>
+          <button 
+            className={`admin-nav-item ${activeTab === 'staff' ? 'active' : ''}`}
+            onClick={() => setActiveTab('staff')}
+            style={{ fontWeight: activeTab === 'staff' ? '700' : '500', color: activeTab === 'staff' ? '#38bdf8' : '' }}
+          >
+            <i className="fa-solid fa-user-shield"></i> Equipe & Sub-Admins ({staffUsers?.length || 1})
           </button>
         </nav>
 
@@ -206,20 +334,287 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       <main className="admin-main-content">
         <header className="admin-topbar">
           <h2>
-            {activeTab === 'products' && <><i className="fa-solid fa-boxes-stacked text-red"></i> Gerenciamento de Produtos (CRUD)</>}
+            {activeTab === 'orders' && <><i className="fa-solid fa-box-open text-red"></i> Gestão de Pedidos & Atendimento ao Vivo</>}
+            {activeTab === 'products' && <><i className="fa-solid fa-boxes-stacked text-red"></i> Gerenciamento de Produtos (CRUD & PIX)</>}
             {activeTab === 'config' && <><i className="fa-solid fa-gear text-red"></i> Configurações Globais & Webhook Discord</>}
-            {activeTab === 'terms' && <><i className="fa-solid fa-file-contract text-red"></i> Edição dos Termos da Loja</>}
+            {activeTab === 'terms' && <><i className="fa-solid fa-file-contract text-red"></i> Edição de Termos e Políticas</>}
+            {activeTab === 'staff' && <><i className="fa-solid fa-user-shield text-red"></i> Gestão de Usuários da Equipe Staff & Sub-Admins</>}
           </h2>
-          <span className="admin-badge"><i className="fa-solid fa-circle text-red" style={{ fontSize: '0.6rem' }}></i> LocalStorage Ativo</span>
+          <div className="admin-actions">
+            <span style={{ fontSize: '0.85rem', color: '#a0a0b0' }}>Modo Staff Ativo</span>
+          </div>
         </header>
 
-        <div className="admin-body">
+        <div className="admin-content-inner">
+          {/* ABA 0: GESTÃO DE PEDIDOS / CHAT EM TEMPO REAL ESTILO GGMAX */}
+          {activeTab === 'orders' && (
+            <div className="admin-orders-view">
+              {/* BARRA DE FILTROS DO STAFF */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', background: '#181822', padding: '14px 18px', borderRadius: '8px', border: '1px solid #2a0c0c', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button 
+                    onClick={() => setOrderFilter('all')} 
+                    style={{ background: orderFilter === 'all' ? '#cc0000' : '#202030', color: '#fff', border: '1px solid #3c3c4e', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.82rem' }}
+                  >
+                    Todos ({orders.length})
+                  </button>
+                  <button 
+                    onClick={() => setOrderFilter('aguardando_comprovante')} 
+                    style={{ background: orderFilter === 'aguardando_comprovante' ? '#ffc107' : '#202030', color: orderFilter === 'aguardando_comprovante' ? '#000' : '#fff', border: '1px solid #3c3c4e', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.82rem' }}
+                  >
+                    Aguardando Comprovante ({orders.filter(o => o.status === 'aguardando_comprovante').length})
+                  </button>
+                  <button 
+                    onClick={() => setOrderFilter('em_analise')} 
+                    style={{ background: orderFilter === 'em_analise' ? '#38bdf8' : '#202030', color: orderFilter === 'em_analise' ? '#000' : '#fff', border: '1px solid #3c3c4e', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.82rem' }}
+                  >
+                    Em Análise 📎 ({orders.filter(o => o.status === 'em_analise').length})
+                  </button>
+                  <button 
+                    onClick={() => setOrderFilter('aprovado_entregue')} 
+                    style={{ background: orderFilter === 'aprovado_entregue' ? '#22c55e' : '#202030', color: '#fff', border: '1px solid #3c3c4e', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.82rem' }}
+                  >
+                    Entregues ✅ ({orders.filter(o => o.status === 'aprovado_entregue').length})
+                  </button>
+                </div>
+                <small style={{ color: '#78788c' }}>Clique em um pedido para atender no chat ao vivo ou liberar entrega.</small>
+              </div>
+
+              {orders.length === 0 ? (
+                <div style={{ background: '#181822', padding: '50px 20px', borderRadius: '8px', border: '1px solid #2a0c0c', textAlign: 'center', color: '#a0a0b0' }}>
+                  <i className="fa-solid fa-box-open" style={{ fontSize: '3rem', color: '#3c3c4e', marginBottom: '16px' }}></i>
+                  <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '8px' }}>Nenhum pedido registrado no sistema ainda</h3>
+                  <p style={{ fontSize: '0.9rem' }}>Quando os clientes gerarem PIX no checkout, os pedidos e comprovantes aparecerão em tempo real aqui.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '20px' }}>
+                  
+                  {/* LISTA DE PEDIDOS FILTRADOS */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '720px' }}>
+                    {orders
+                      .filter(o => orderFilter === 'all' || o.status === orderFilter)
+                      .map(ord => {
+                        const isSelected = (selectedAdminOrderId ? selectedAdminOrderId === ord.id : orders[0]?.id === ord.id);
+                        return (
+                          <div 
+                            key={ord.id}
+                            onClick={() => {
+                              setSelectedAdminOrderId(ord.id);
+                              setDeliveryInput(ord.deliveryContent || '');
+                              setRejectReasonInput(ord.rejectReason || '');
+                            }}
+                            style={{
+                              background: isSelected ? '#202030' : '#181822',
+                              border: isSelected ? '1px solid #22c55e' : '1px solid #2a0c0c',
+                              borderRadius: '8px',
+                              padding: '14px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              boxShadow: isSelected ? '0 0 16px rgba(34, 197, 94, 0.2)' : 'none'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                              <strong style={{ color: '#fff', fontSize: '0.88rem' }}>{ord.orderNumber}</strong>
+                              <span style={{ fontSize: '0.75rem', color: '#78788c' }}>{new Date(ord.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                              <img src={ord.buyer?.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'} alt="Buyer" style={{ width: '22px', height: '22px', borderRadius: '50%' }} />
+                              <span style={{ fontSize: '0.85rem', color: '#38bdf8', fontWeight: '600' }}>{ord.buyer?.username}</span>
+                            </div>
+
+                            <div style={{ fontSize: '0.92rem', fontWeight: '700', color: '#fff', marginBottom: '6px' }}>
+                              {ord.product?.name} ({ord.product?.priceText})
+                            </div>
+
+                            {ord.contactMethod && (
+                              <div style={{ fontSize: '0.74rem', color: '#a0a0b0', marginBottom: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                📬 {ord.contactMethod} ({ord.contactValue})
+                              </div>
+                            )}
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              {ord.status === 'aguardando_comprovante' && <span style={{ color: '#ffc107', fontSize: '0.76rem', fontWeight: '700' }}>⏳ Aguardando Comprovante</span>}
+                              {ord.status === 'em_analise' && <span style={{ color: '#38bdf8', fontSize: '0.76rem', fontWeight: '700' }}>📎 Comprovante Anexado!</span>}
+                              {ord.status === 'aprovado_entregue' && <span style={{ color: '#22c55e', fontSize: '0.76rem', fontWeight: '700' }}>✅ Entregue ao Cliente</span>}
+                              {ord.status === 'cancelado' && <span style={{ color: '#ff6b6b', fontSize: '0.76rem', fontWeight: '700' }}>❌ Cancelado/Reprovado</span>}
+                              
+                              <span style={{ fontSize: '0.75rem', color: '#a0a0b0' }}>{ord.messages?.length || 0} msgs</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+
+                  {/* SALA DO ATENDIMENTO / ENTREGA */}
+                  {(() => {
+                    const selOrd = orders.find(o => o.id === (selectedAdminOrderId || orders[0]?.id));
+                    if (!selOrd) return null;
+
+                    return (
+                      <div style={{ background: '#181822', border: '1px solid #2a0c0c', borderRadius: '10px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        
+                        {/* HEADER DO PEDIDO NO STAFF */}
+                        <div style={{ padding: '16px 20px', background: '#1c1c28', borderBottom: '1px solid #2a0c0c', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <img src={selOrd.buyer?.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'} alt="Buyer" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #5865F2' }} />
+                            <div>
+                              <span style={{ fontSize: '0.78rem', color: '#a0a0b0' }}>ATENDIMENTO • PEDIDO {selOrd.orderNumber}</span>
+                              <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#fff', fontWeight: '700' }}>
+                                Cliente: <span style={{ color: '#5865F2' }}>{selOrd.buyer?.username}</span> | {selOrd.product?.name} ({selOrd.product?.priceText})
+                              </h3>
+                              {selOrd.contactMethod && (
+                                <div style={{ fontSize: '0.82rem', color: '#a0a0b0', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ background: '#202030', padding: '2px 8px', borderRadius: '4px', border: '1px solid #333' }}>📬 Canal de Contato: <strong style={{ color: '#fff' }}>{selOrd.contactMethod}</strong></span>
+                                  {selOrd.contactValue && <span style={{ background: '#202030', padding: '2px 8px', borderRadius: '4px', border: '1px solid #333' }}>👤 Contato: <strong style={{ color: '#38bdf8' }}>{selOrd.contactValue}</strong></span>}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            {selOrd.proofImage && (
+                              <a href={selOrd.proofImage} target="_blank" rel="noopener noreferrer" className="btn-hero" style={{ padding: '6px 12px', fontSize: '0.8rem', background: '#38bdf8', color: '#000', textDecoration: 'none' }}>
+                                <i className="fa-solid fa-receipt"></i> Ver Comprovante PIX
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* AÇÕES DE APROVAÇÃO / REPROVAÇÃO NO STAFF */}
+                        {selOrd.status !== 'aprovado_entregue' && selOrd.status !== 'cancelado' && (
+                          <div style={{ padding: '16px 20px', background: '#14141c', borderBottom: '1px solid #2a0c0c', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div style={{ background: '#101e14', border: '1px solid #22c55e', borderRadius: '8px', padding: '14px' }}>
+                              <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#22c55e', display: 'block', marginBottom: '8px' }}>
+                                <i className="fa-solid fa-gift"></i> Aprovar Pagamento & Entregar Produto:
+                              </label>
+                              <textarea 
+                                className="form-input" 
+                                rows={2} 
+                                placeholder="Digite aqui o login/senha, código gift ou instruções da entrega..."
+                                value={deliveryInput}
+                                onChange={(e) => setDeliveryInput(e.target.value)}
+                                style={{ fontSize: '0.85rem', background: '#162b1d', border: '1px solid #22c55e', color: '#fff', marginBottom: '10px' }}
+                              />
+                              <button 
+                                onClick={() => {
+                                  if (!deliveryInput.trim()) {
+                                    alert('Digite o conteúdo da entrega no campo acima antes de aprovar!');
+                                    return;
+                                  }
+                                  approveAndDeliverOrder(selOrd.id, deliveryInput.trim());
+                                  alert('✅ Produto entregue! O cliente recebeu os dados no chat dele.');
+                                }}
+                                className="btn-complete-order"
+                                style={{ background: '#22c55e', border: 'none', padding: '10px', fontSize: '0.88rem', fontWeight: '700', color: '#fff' }}
+                              >
+                                <i className="fa-solid fa-check"></i> Liberar Entrega & Aprovar
+                              </button>
+                            </div>
+
+                            <div style={{ background: '#221414', border: '1px solid #cc0000', borderRadius: '8px', padding: '14px' }}>
+                              <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#ff6b6b', display: 'block', marginBottom: '8px' }}>
+                                <i className="fa-solid fa-xmark"></i> Reprovar Comprovante / Pedido:
+                              </label>
+                              <input 
+                                type="text" 
+                                className="form-input" 
+                                placeholder="Motivo: Comprovante ilegível, valor incorreto..."
+                                value={rejectReasonInput}
+                                onChange={(e) => setRejectReasonInput(e.target.value)}
+                                style={{ fontSize: '0.85rem', background: '#2e1818', border: '1px solid #cc0000', color: '#fff', marginBottom: '10px' }}
+                              />
+                              <button 
+                                onClick={() => {
+                                  if (!rejectReasonInput.trim()) {
+                                    alert('Digite o motivo da reprovação!');
+                                    return;
+                                  }
+                                  rejectOrder(selOrd.id, rejectReasonInput.trim());
+                                  alert('❌ Pedido reprovado e motivo notificado no chat.');
+                                }}
+                                className="btn-complete-order"
+                                style={{ background: '#cc0000', border: 'none', padding: '10px', fontSize: '0.88rem', fontWeight: '700', color: '#fff' }}
+                              >
+                                <i className="fa-solid fa-ban"></i> Reprovar Comprovante
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ÁREA MENSAGENS E CHAT DO STAFF COM O CLIENTE */}
+                        <div style={{ flex: 1, padding: '18px 20px', overflowY: 'auto', maxHeight: '380px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#12121a' }}>
+                          {selOrd.messages && selOrd.messages.map((msg) => {
+                            const isSystem = msg.type === 'system';
+                            const isStaff = msg.type === 'staff';
+
+                            if (isSystem) {
+                              return (
+                                <div key={msg.id} style={{ alignSelf: 'center', background: '#1a1a28', border: '1px dashed #3c3c54', borderRadius: '6px', padding: '8px 14px', maxWidth: '80%', textAlign: 'center', fontSize: '0.82rem', color: '#a0a0b0' }}>
+                                  <span style={{ fontSize: '0.72rem', color: '#78788c', display: 'block', marginBottom: '2px' }}>{msg.timestamp} • Sistema</span>
+                                  {msg.text}
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div key={msg.id} style={{ alignSelf: isStaff ? 'flex-end' : 'flex-start', maxWidth: '75%', display: 'flex', flexDirection: 'column', alignItems: isStaff ? 'flex-end' : 'flex-start' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                                  <strong style={{ fontSize: '0.8rem', color: isStaff ? '#ff4d4d' : '#38bdf8' }}>{msg.sender} ({isStaff ? 'STAFF' : 'CLIENTE'})</strong>
+                                  <span style={{ fontSize: '0.7rem', color: '#78788c' }}>{msg.timestamp}</span>
+                                </div>
+                                <div style={{ background: isStaff ? '#261414' : '#1c1e30', border: isStaff ? '1px solid #6b1d1d' : '1px solid #3c3e62', borderRadius: '8px', padding: '10px 14px', color: '#fff', fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>
+                                  {msg.text}
+                                  {msg.attachment && (
+                                    <div style={{ marginTop: '8px' }}>
+                                      <a href={msg.attachment} target="_blank" rel="noopener noreferrer">
+                                        <img src={msg.attachment} alt="Anexo" style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '6px', border: '1px solid #3a3a4e' }} />
+                                      </a>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* INPUT PARA STAFF RESPONDER NO CHAT */}
+                        <form 
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            if (!adminChatInput.trim() || !selOrd) return;
+                            addOrderMessage(selOrd.id, currentStaff?.username || "Staff Blood Store", "staff", adminChatInput.trim());
+                            setAdminChatInput('');
+                          }} 
+                          style={{ padding: '12px 18px', background: '#161620', borderTop: '1px solid #2a0c0c', display: 'flex', gap: '10px' }}
+                        >
+                          <input 
+                            type="text" 
+                            className="form-input" 
+                            placeholder={`Responder para ${selOrd.buyer?.username} no chat ao vivo...`}
+                            value={adminChatInput}
+                            onChange={(e) => setAdminChatInput(e.target.value)}
+                            style={{ flex: 1, background: '#1a1a26' }}
+                          />
+                          <button type="submit" className="btn-complete-order" style={{ width: 'auto', padding: '0 20px', background: '#cc0000', border: 'none', borderRadius: '6px' }}>
+                            <i className="fa-solid fa-paper-plane"></i> Enviar
+                          </button>
+                        </form>
+
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ABA 1: PRODUTOS */}
           {activeTab === 'products' && (
             <div className="admin-products-view">
               {/* Formulário Adicionar Novo */}
               <div className="admin-card">
-                <h3><i className="fa-solid fa-plus text-red"></i> Adicionar Novo Produto</h3>
+                <h3><i className="fa-solid fa-plus text-red"></i> Adicionar Novo Produto & Configurar PIX Exclusivo</h3>
                 <form onSubmit={handleAddProduct} className="admin-grid-form">
                   <div className="form-group">
                     <label className="form-label">Nome do Produto</label>
@@ -245,17 +640,59 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                     />
                   </div>
 
-                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                    <label className="form-label">Caminho da Imagem (Pasta Local ou URL externa)</label>
+                  <div className="form-group">
+                    <label className="form-label">Chave PIX Específica do Produto (Opcional)</label>
                     <input 
                       type="text" 
                       className="form-input" 
-                      placeholder="/fotos e videos/nome.png ou https://imgur.com/..." 
-                      value={newProdImage}
-                      onChange={(e) => setNewProdImage(e.target.value)}
+                      placeholder="Se preenchida, substitui a chave PIX global para este item" 
+                      value={newProdPixKey}
+                      onChange={(e) => setNewProdPixKey(e.target.value)}
                     />
-                    <small style={{ color: '#78788c', display: 'block', marginTop: '4px' }}>
-                      Se o arquivo estiver em `public/fotos e videos/`, digite `/fotos e videos/nome.png`.
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">QR Code PIX do Produto (Opcional)</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="/fotos e videos/qrcode.png ou URL da imagem do QR Code" 
+                      value={newProdQrCodeUrl}
+                      onChange={(e) => setNewProdQrCodeUrl(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="form-label">Imagem do Produto (Selecione da pasta, envie do PC ou cole um link)</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', marginBottom: '8px' }}>
+                      <select 
+                        className="form-input" 
+                        value={PRESET_MEDIA_FILES.some(f => f.value === newProdImage) ? newProdImage : ""}
+                        onChange={(e) => { if (e.target.value) setNewProdImage(e.target.value); }}
+                      >
+                        {PRESET_MEDIA_FILES.map(f => (
+                          <option key={f.value} value={f.value}>{f.label}</option>
+                        ))}
+                      </select>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="/fotos e videos/robux.png ou https://..." 
+                        value={newProdImage}
+                        onChange={(e) => setNewProdImage(e.target.value)}
+                      />
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '0 16px', background: '#22c55e', borderRadius: '6px', color: '#fff', fontWeight: '600', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                        <i className="fa-solid fa-cloud-arrow-up"></i> Enviar do PC
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          style={{ display: 'none' }} 
+                          onChange={(e) => handleFileUpload(e, setNewProdImage)} 
+                        />
+                      </label>
+                    </div>
+                    <small style={{ color: '#78788c', display: 'block' }}>
+                      Você pode escolher um arquivo da pasta <code>fotos e videos/</code>, carregar uma foto do seu computador ou colar qualquer link da internet.
                     </small>
                   </div>
 
@@ -286,7 +723,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                     <thead>
                       <tr>
                         <th>Imagem</th>
-                        <th>Nome</th>
+                        <th>Nome & PIX Exclusivo</th>
                         <th>Preço</th>
                         <th>Caminho</th>
                         <th>Ações</th>
@@ -305,14 +742,34 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                           </td>
                           <td>
                             {editingId === prod.id ? (
-                              <input 
-                                type="text" 
-                                className="form-input" 
-                                value={editName} 
-                                onChange={(e) => setEditName(e.target.value)} 
-                              />
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <input 
+                                  type="text" 
+                                  className="form-input" 
+                                  placeholder="Nome"
+                                  value={editName} 
+                                  onChange={(e) => setEditName(e.target.value)} 
+                                />
+                                <input 
+                                  type="text" 
+                                  className="form-input" 
+                                  placeholder="Chave PIX Específica (Opcional)"
+                                  value={editPixKey} 
+                                  onChange={(e) => setEditPixKey(e.target.value)} 
+                                />
+                                <input 
+                                  type="text" 
+                                  className="form-input" 
+                                  placeholder="URL QR Code (Opcional)"
+                                  value={editQrCodeUrl} 
+                                  onChange={(e) => setEditQrCodeUrl(e.target.value)} 
+                                />
+                              </div>
                             ) : (
-                              <strong>{prod.name}</strong>
+                              <div>
+                                <strong style={{ display: 'block' }}>{prod.name}</strong>
+                                {prod.pixKey && <small style={{ color: '#38bdf8', fontSize: '0.75rem' }}>PIX: {prod.pixKey}</small>}
+                              </div>
                             )}
                           </td>
                           <td>
@@ -329,12 +786,36 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                           </td>
                           <td>
                             {editingId === prod.id ? (
-                              <input 
-                                type="text" 
-                                className="form-input" 
-                                value={editImage} 
-                                onChange={(e) => setEditImage(e.target.value)} 
-                              />
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <select 
+                                  className="form-input" 
+                                  style={{ fontSize: '0.8rem', padding: '6px' }}
+                                  value={PRESET_MEDIA_FILES.some(f => f.value === editImage) ? editImage : ""}
+                                  onChange={(e) => { if (e.target.value) setEditImage(e.target.value); }}
+                                >
+                                  {PRESET_MEDIA_FILES.map(f => (
+                                    <option key={f.value} value={f.value}>{f.label}</option>
+                                  ))}
+                                </select>
+                                <div style={{ display: 'flex', gap: '4px' }}>
+                                  <input 
+                                    type="text" 
+                                    className="form-input" 
+                                    style={{ fontSize: '0.8rem', padding: '6px' }}
+                                    value={editImage} 
+                                    onChange={(e) => setEditImage(e.target.value)} 
+                                  />
+                                  <label className="btn-action-save" title="Subir do PC" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '0 10px', background: '#22c55e', borderRadius: '4px', color: '#fff' }}>
+                                    <i className="fa-solid fa-upload"></i>
+                                    <input 
+                                      type="file" 
+                                      accept="image/*" 
+                                      style={{ display: 'none' }} 
+                                      onChange={(e) => handleFileUpload(e, setEditImage)} 
+                                    />
+                                  </label>
+                                </div>
+                              </div>
                             ) : (
                               <code style={{ fontSize: '0.78rem', color: '#a0a0b0' }}>{prod.image}</code>
                             )}
@@ -388,6 +869,78 @@ export const AdminDashboard = ({ onExitAdmin }) => {
               </p>
 
               <form onSubmit={handleSaveConfig} className="admin-grid-form">
+                <div className="form-group" style={{ gridColumn: '1 / -1', background: '#12121a', padding: '16px', borderRadius: '8px', border: '1px solid #2a0c0c' }}>
+                  <label className="form-label">
+                    <i className="fa-solid fa-image text-red"></i> Logo Oficial da Loja (Barra do Topo, Rodapé e Checkout)
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', marginBottom: '8px' }}>
+                    <select 
+                      className="form-input" 
+                      value={PRESET_MEDIA_FILES.some(f => f.value === cfgLogoUrl) ? cfgLogoUrl : ""}
+                      onChange={(e) => { if (e.target.value) setCfgLogoUrl(e.target.value); }}
+                    >
+                      {PRESET_MEDIA_FILES.map(f => (
+                        <option key={f.value} value={f.value}>{f.label}</option>
+                      ))}
+                    </select>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="/fotos e videos/BloodstoreLogo1.png" 
+                      value={cfgLogoUrl}
+                      onChange={(e) => setCfgLogoUrl(e.target.value)}
+                    />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '0 16px', background: '#22c55e', borderRadius: '6px', color: '#fff', fontWeight: '600', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                      <i className="fa-solid fa-cloud-arrow-up"></i> Enviar do PC
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        style={{ display: 'none' }} 
+                        onChange={(e) => handleFileUpload(e, setCfgLogoUrl)} 
+                      />
+                    </label>
+                  </div>
+                  <small style={{ color: '#78788c', display: 'block' }}>
+                    A logo selecionada aparece automaticamente no topo da loja, no rodapé e na tela de checkout. Padrão sugerido: <code>/fotos e videos/Bloodstore.png</code>.
+                  </small>
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1', background: '#12121a', padding: '16px', borderRadius: '8px', border: '1px solid #2a0c0c', marginBottom: '8px' }}>
+                  <label className="form-label">
+                    <i className="fa-solid fa-video text-red"></i> Vídeo / Imagem de Fundo do Banner Principal (Hero)
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', marginBottom: '8px' }}>
+                    <select 
+                      className="form-input" 
+                      value={PRESET_MEDIA_FILES.some(f => f.value === cfgBannerVideoUrl) ? cfgBannerVideoUrl : ""}
+                      onChange={(e) => { if (e.target.value) setCfgBannerVideoUrl(e.target.value); }}
+                    >
+                      {PRESET_MEDIA_FILES.map(f => (
+                        <option key={f.value} value={f.value}>{f.label}</option>
+                      ))}
+                    </select>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="/fotos e videos/animation.mp4" 
+                      value={cfgBannerVideoUrl}
+                      onChange={(e) => setCfgBannerVideoUrl(e.target.value)}
+                    />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '0 16px', background: '#22c55e', borderRadius: '6px', color: '#fff', fontWeight: '600', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                      <i className="fa-solid fa-cloud-arrow-up"></i> Enviar do PC
+                      <input 
+                        type="file" 
+                        accept="image/*,video/*" 
+                        style={{ display: 'none' }} 
+                        onChange={(e) => handleFileUpload(e, setCfgBannerVideoUrl)} 
+                      />
+                    </label>
+                  </div>
+                  <small style={{ color: '#78788c', display: 'block' }}>
+                    Escolha um vídeo da pasta (ex: <code>animation.mp4</code> ou <code>banner.mp4</code>), faça upload do seu computador ou cole um link de imagem/vídeo.
+                  </small>
+                </div>
+
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label className="form-label">
                     <i className="fa-brands fa-discord text-red"></i> URL do Webhook do Discord (Para notificações de Venda)
@@ -406,7 +959,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
 
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                   <label className="form-label">
-                    <i className="fa-solid fa-qrcode text-red"></i> Chave PIX Copia e Cola (Sua conta recebedora)
+                    <i className="fa-solid fa-qrcode text-red"></i> Chave PIX Copia e Cola Geral (Sua conta recebedora padrão)
                   </label>
                   <input 
                     type="text" 
@@ -489,6 +1042,165 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* ABA 4: GESTÃO DE EQUIPE / SUB-ADMINS */}
+          {activeTab === 'staff' && (
+            <div className="admin-card">
+              <h3><i className="fa-solid fa-user-shield text-red"></i> Criar & Gerenciar Sub-Administradores da Equipe</h3>
+              <p style={{ color: '#a0a0b0', fontSize: '0.9rem', marginBottom: '20px' }}>
+                O dono (<b>xsag</b>) pode criar contas de acesso para moderadores e suporte, definindo permissões específicas para cada membro da equipe.
+              </p>
+
+              {/* Formulário de Novo Membro */}
+              <form onSubmit={handleAddStaffUser} className="admin-grid-form" style={{ background: '#12121a', padding: '20px', borderRadius: '8px', border: '1px solid #2a0c0c', marginBottom: '24px' }}>
+                <div className="form-group">
+                  <label className="form-label">Nome de Usuário (Login)</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    placeholder="ex: moderador_lucas" 
+                    value={newStaffUser}
+                    onChange={(e) => setNewStaffUser(e.target.value)}
+                    required 
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Senha de Acesso</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    placeholder="ex: staff2026" 
+                    value={newStaffPass}
+                    onChange={(e) => setNewStaffPass(e.target.value)}
+                    required 
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Cargo / Função</label>
+                  <select 
+                    className="form-input" 
+                    value={newStaffRole}
+                    onChange={(e) => setNewStaffRole(e.target.value)}
+                  >
+                    <option value="Suporte / Moderador">Suporte / Moderador</option>
+                    <option value="Gerente de Pedidos">Gerente de Pedidos</option>
+                    <option value="Administrador">Administrador</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label className="form-label" style={{ marginBottom: '10px' }}>Permissões Concedidas</label>
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={newStaffPerms.canManageOrders} 
+                        onChange={(e) => setNewStaffPerms({ ...newStaffPerms, canManageOrders: e.target.checked })} 
+                      />
+                      Atender e Entregar Pedidos
+                    </label>
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={newStaffPerms.canManageProducts} 
+                        onChange={(e) => setNewStaffPerms({ ...newStaffPerms, canManageProducts: e.target.checked })} 
+                      />
+                      Adicionar/Editar Produtos (CRUD)
+                    </label>
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={newStaffPerms.canManageConfig} 
+                        onChange={(e) => setNewStaffPerms({ ...newStaffPerms, canManageConfig: e.target.checked })} 
+                      />
+                      Editar Mídias / Webhook / Configs Globais
+                    </label>
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={newStaffPerms.canManageStaff} 
+                        onChange={(e) => setNewStaffPerms({ ...newStaffPerms, canManageStaff: e.target.checked })} 
+                      />
+                      Gerenciar Equipe / Sub-Admins
+                    </label>
+                  </div>
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <button type="submit" className="btn-complete-order" style={{ width: 'auto' }}>
+                    <i className="fa-solid fa-user-plus"></i> Criar Sub-Admin da Equipe
+                  </button>
+                </div>
+              </form>
+
+              {/* Tabela de Membros */}
+              <h3><i className="fa-solid fa-users text-red"></i> Membros Atuais da Equipe Staff</h3>
+              <div className="admin-table-wrap" style={{ marginTop: '12px' }}>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Usuário</th>
+                      <th>Cargo</th>
+                      <th>Permissões</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {staffUsers?.map(user => (
+                      <tr key={user.id}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#cc0000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                              {user.username.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <strong style={{ color: '#fff', display: 'block' }}>{user.username}</strong>
+                              <small style={{ color: '#78788c' }}>{user.id === 'staff_owner' ? 'Dono Principal' : 'Membro Staff'}</small>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{ background: '#202030', padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: '600' }}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            {user.canManageOrders && <span style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>✅ Pedidos</span>}
+                            {user.canManageProducts && <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>📦 Produtos</span>}
+                            {user.canManageConfig && <span style={{ background: 'rgba(255, 193, 7, 0.15)', color: '#ffc107', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>⚙️ Configs</span>}
+                            {user.canManageStaff && <span style={{ background: 'rgba(204, 0, 0, 0.15)', color: '#ff6b6b', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem' }}>🛡️ Equipe</span>}
+                          </div>
+                        </td>
+                        <td>
+                          {user.username.toLowerCase() === 'xsag' ? (
+                            <span style={{ fontSize: '0.8rem', color: '#78788c' }}>Protegido (Dono)</span>
+                          ) : (
+                            <button 
+                              onClick={() => {
+                                if (window.confirm(`Remover o acesso de "${user.username}" da equipe Staff?`)) {
+                                  deleteStaffUser(user.id);
+                                }
+                              }} 
+                              className="btn-action-delete"
+                              title="Remover Acesso"
+                            >
+                              <i className="fa-solid fa-trash"></i>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
