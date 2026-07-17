@@ -171,7 +171,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       setIsAuthenticated(true);
       notifyStaffStatus(foundStaff, 'login');
     } else if ((cleanUser === 'xsag' && cleanPass === '2368*09783@#87678923bl0d778604') || ((cleanUser === 'admin' || cleanUser === 'staff') && cleanPass === 'admin123')) {
-      // 2. Fallback fixo de dono (xsag / penismurcho ou admin123)
+      // 2. Fallback fixo de dono (xsag / ou admin123)
       const fallbackStaff = {
         id: 'owner_session',
         username: cleanUser,
