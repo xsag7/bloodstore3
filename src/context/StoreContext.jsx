@@ -10,7 +10,12 @@ const DEFAULT_STATE = {
     storeName: "BLOOD STORE",
     slogan: "Sua evolução começa aqui.",
     discordInvite: "https://discord.gg/Gvbg5WYPBP",
-    webhookUrl: "https://discord.com/api/webhooks/1527312578898956409/u0DEYy-liGUA9w-e6fHjwlHNPDQmPzXoPR5lu5_jUGhcGheslAmBY2YDWOQF7k58O3Xm", 
+    webhookUrl: "https://discord.com/api/webhooks/1527709858521022597/yQu3kvsRc9GblhZZBma4361FjEtWrGB5OwZHxpz-arXiGqMNDUJQmVUiG--VOTLKsj8g", 
+    webhookLogsUrl: "https://discord.com/api/webhooks/1527709756414754876/XS2Q5993ommq4E-F48F1xz_NoSlbMj3vz-OSwLNRvzmPgI5NhG678jM3cTT0S0zMtceu",
+    webhookMsgLogsUrl: "https://discord.com/api/webhooks/1527709858521022597/yQu3kvsRc9GblhZZBma4361FjEtWrGB5OwZHxpz-arXiGqMNDUJQmVUiG--VOTLKsj8g",
+    webhookApprovalUrl: "https://discord.com/api/webhooks/1527709968927559681/X9-22J4ASWXACKl8U7EaaMwNnFmc8l_uxQi0v94jbDOxfYuWrB6dTltMNXH3p1OZYvql",
+    webhookRejectedUrl: "https://discord.com/api/webhooks/1527710112922210475/5lZrqHBXbQ55rEUGljSfW4ONimIVNTGpoG7zMkYxxU_qje8wYK9JD7nJCDXfPCspmfWS",
+    webhookStaffJoinUrl: "https://discord.com/api/webhooks/1527710186087649481/4k7PDV2bjuFPsLQ9F2pn1kFRp4HYv2TgqPes_xiOtssSCaVNFqgAn53_U9elJ9we1NA0",
     pixKey: "00020126580014br.gov.bcb.pix0136BLOOD-STORE-PIX-EXCLUSIVE5204000053039865802BR5911BLOOD STORE6009SAO PAULO62070503***63041A2B",
     logoUrl: "/fotos e videos/Bloodstore.png",
     bannerVideoUrl: "/fotos e videos/BloodstoreLogo2.png", // Wallpaper de fundo BloodstoreLogo2.png
@@ -196,7 +201,12 @@ export const StoreProvider = ({ children }) => {
             ...(parsed.config || {}),
             logoUrl: logo,
             bannerVideoUrl: bannerVideo,
-            webhookUrl: parsed.config?.webhookUrl?.trim() || DEFAULT_STATE.config.webhookUrl
+            webhookUrl: parsed.config?.webhookUrl?.trim() || DEFAULT_STATE.config.webhookUrl,
+            webhookLogsUrl: parsed.config?.webhookLogsUrl?.trim() || DEFAULT_STATE.config.webhookLogsUrl,
+            webhookMsgLogsUrl: parsed.config?.webhookMsgLogsUrl?.trim() || DEFAULT_STATE.config.webhookMsgLogsUrl,
+            webhookApprovalUrl: parsed.config?.webhookApprovalUrl?.trim() || DEFAULT_STATE.config.webhookApprovalUrl,
+            webhookRejectedUrl: parsed.config?.webhookRejectedUrl?.trim() || DEFAULT_STATE.config.webhookRejectedUrl,
+            webhookStaffJoinUrl: parsed.config?.webhookStaffJoinUrl?.trim() || DEFAULT_STATE.config.webhookStaffJoinUrl
           },
           staffUsers: Array.isArray(parsed.staffUsers) && parsed.staffUsers.length > 0 
             ? parsed.staffUsers 
@@ -240,7 +250,12 @@ export const StoreProvider = ({ children }) => {
           bannerVideoUrl: (!data.config?.bannerVideoUrl || data.config?.bannerVideoUrl === "/fotos e videos/animation.mp4")
             ? "/fotos e videos/BloodstoreLogo2.png"
             : data.config.bannerVideoUrl,
-          webhookUrl: data.config?.webhookUrl?.trim() || prev.config?.webhookUrl?.trim() || DEFAULT_STATE.config.webhookUrl
+          webhookUrl: data.config?.webhookUrl?.trim() || prev.config?.webhookUrl?.trim() || DEFAULT_STATE.config.webhookUrl,
+          webhookLogsUrl: data.config?.webhookLogsUrl?.trim() || prev.config?.webhookLogsUrl?.trim() || DEFAULT_STATE.config.webhookLogsUrl,
+          webhookMsgLogsUrl: data.config?.webhookMsgLogsUrl?.trim() || prev.config?.webhookMsgLogsUrl?.trim() || DEFAULT_STATE.config.webhookMsgLogsUrl,
+          webhookApprovalUrl: data.config?.webhookApprovalUrl?.trim() || prev.config?.webhookApprovalUrl?.trim() || DEFAULT_STATE.config.webhookApprovalUrl,
+          webhookRejectedUrl: data.config?.webhookRejectedUrl?.trim() || prev.config?.webhookRejectedUrl?.trim() || DEFAULT_STATE.config.webhookRejectedUrl,
+          webhookStaffJoinUrl: data.config?.webhookStaffJoinUrl?.trim() || prev.config?.webhookStaffJoinUrl?.trim() || DEFAULT_STATE.config.webhookStaffJoinUrl
         };
         const mergedStaff = Array.isArray(data.staff_users) && data.staff_users.length > 0
           ? data.staff_users
@@ -413,21 +428,26 @@ export const StoreProvider = ({ children }) => {
   }, [storeState]);
 
   // Funções CRUD de Configurações
-  const updateConfig = (newConfig) => {
+  const updateConfig = (newConfig, staffName = "Admin / Staff") => {
     const sanitized = { ...newConfig };
     if (sanitized.storeName) sanitized.storeName = sanitizeString(sanitized.storeName, 100);
     if (sanitized.slogan) sanitized.slogan = sanitizeString(sanitized.slogan, 200);
     if (sanitized.discordInvite) sanitized.discordInvite = sanitizeString(sanitized.discordInvite, 300);
 
     markLocalUpdate();
-    setStoreState(prev => ({
-      ...prev,
-      config: { ...prev.config, ...sanitized }
-    }));
+    setStoreState(prev => {
+      const next = {
+        ...prev,
+        config: { ...prev.config, ...sanitized }
+      };
+      storeStateRef.current = next;
+      return next;
+    });
+    notifyDiscordLogs("Configurações & Webhooks Atualizados", `O usuário @${staffName} atualizou as configurações gerais ou links de Webhook da loja.`, staffName);
   };
 
   // Funções CRUD de Sub-Administradores (Equipe Staff)
-  const addStaffUser = (newUser) => {
+  const addStaffUser = (newUser, staffName = "Admin / Staff") => {
     const id = "staff_" + Date.now();
     const cleanUser = {
       ...newUser,
@@ -435,34 +455,50 @@ export const StoreProvider = ({ children }) => {
       name: sanitizeString(newUser.name || '', 100)
     };
     markLocalUpdate();
-    setStoreState(prev => ({
-      ...prev,
-      staffUsers: [...(prev.staffUsers || DEFAULT_STATE.staffUsers), { ...cleanUser, id }]
-    }));
+    setStoreState(prev => {
+      const next = {
+        ...prev,
+        staffUsers: [...(prev.staffUsers || DEFAULT_STATE.staffUsers), { ...cleanUser, id }]
+      };
+      storeStateRef.current = next;
+      return next;
+    });
+    notifyDiscordLogs("Membro Staff Criado", `Novo membro cadastrado: @${cleanUser.username} (${cleanUser.name}) - Cargo: ${cleanUser.role || 'staff'}`, staffName);
   };
 
-  const updateStaffUser = (id, updatedFields) => {
+  const updateStaffUser = (id, updatedFields, staffName = "Admin / Staff") => {
     const cleanFields = { ...updatedFields };
     if (cleanFields.username) cleanFields.username = sanitizeString(cleanFields.username, 50);
     if (cleanFields.name) cleanFields.name = sanitizeString(cleanFields.name, 100);
 
     markLocalUpdate();
-    setStoreState(prev => ({
-      ...prev,
-      staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).map(u => u.id === id ? { ...u, ...cleanFields } : u)
-    }));
+    setStoreState(prev => {
+      const next = {
+        ...prev,
+        staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).map(u => u.id === id ? { ...u, ...cleanFields } : u)
+      };
+      storeStateRef.current = next;
+      return next;
+    });
+    notifyDiscordLogs("Membro Staff Editado", `O membro Staff com ID ${id} teve seus dados ou permissões modificados.`, staffName);
   };
 
-  const deleteStaffUser = (id) => {
+  const deleteStaffUser = (id, staffName = "Admin / Staff") => {
+    const target = (storeStateRef.current.staffUsers || []).find(u => u.id === id);
     markLocalUpdate();
-    setStoreState(prev => ({
-      ...prev,
-      staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).filter(u => u.id !== id && u.username !== 'xsag')
-    }));
+    setStoreState(prev => {
+      const next = {
+        ...prev,
+        staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).filter(u => u.id !== id && u.username !== 'xsag')
+      };
+      storeStateRef.current = next;
+      return next;
+    });
+    notifyDiscordLogs("Membro Staff Removido", `O membro Staff "@${target?.username || id}" (${target?.name || ''}) foi removido da equipe.`, staffName);
   };
 
   // Funções CRUD de Produtos
-  const addProduct = (newProd) => {
+  const addProduct = (newProd, staffName = "Admin / Staff") => {
     const id = "p_" + Date.now();
     const cleanProd = {
       ...newProd,
@@ -470,44 +506,67 @@ export const StoreProvider = ({ children }) => {
       priceText: sanitizeString(newProd.priceText || '', 30)
     };
     markLocalUpdate();
-    setStoreState(prev => ({
-      ...prev,
-      products: [...prev.products, { ...cleanProd, id }]
-    }));
+    setStoreState(prev => {
+      const next = {
+        ...prev,
+        products: [...prev.products, { ...cleanProd, id }]
+      };
+      storeStateRef.current = next;
+      return next;
+    });
+    notifyDiscordLogs("Novo Produto Cadastrado", `Produto criado: "${cleanProd.name}" com valor estabelecido de ${cleanProd.priceText}.`, staffName);
   };
 
-  const updateProduct = (id, updatedFields) => {
+  const updateProduct = (id, updatedFields, staffName = "Admin / Staff") => {
     const cleanFields = { ...updatedFields };
     if (cleanFields.name) cleanFields.name = sanitizeString(cleanFields.name, 150);
     if (cleanFields.priceText) cleanFields.priceText = sanitizeString(cleanFields.priceText, 30);
 
     markLocalUpdate();
-    setStoreState(prev => ({
-      ...prev,
-      products: prev.products.map(p => p.id === id ? { ...p, ...cleanFields } : p)
-    }));
+    setStoreState(prev => {
+      const next = {
+        ...prev,
+        products: prev.products.map(p => p.id === id ? { ...p, ...cleanFields } : p)
+      };
+      storeStateRef.current = next;
+      return next;
+    });
+    notifyDiscordLogs("Produto Atualizado no Catálogo", `O produto (ID: ${id}) "${cleanFields.name || 'Modificado'}" foi atualizado na loja.`, staffName);
   };
 
-  const deleteProduct = (id) => {
+  const deleteProduct = (id, staffName = "Admin / Staff") => {
+    const target = (storeStateRef.current.products || []).find(p => p.id === id);
     markLocalUpdate();
-    setStoreState(prev => ({
-      ...prev,
-      products: prev.products.filter(p => p.id !== id)
-    }));
+    setStoreState(prev => {
+      const next = {
+        ...prev,
+        products: prev.products.filter(p => p.id !== id)
+      };
+      storeStateRef.current = next;
+      return next;
+    });
+    notifyDiscordLogs("Produto Excluído", `O produto "${target?.name || id}" foi excluído permanentemente do catálogo.`, staffName);
   };
 
   // Funções CRUD de Termos
-  const updateTerms = (updatedTerms) => {
+  const updateTerms = (updatedTerms, staffName = "Admin / Staff") => {
     markLocalUpdate();
-    setStoreState(prev => ({
-      ...prev,
-      terms: updatedTerms
-    }));
+    setStoreState(prev => {
+      const next = {
+        ...prev,
+        terms: updatedTerms
+      };
+      storeStateRef.current = next;
+      return next;
+    });
+    notifyDiscordLogs("Termos e Diretrizes Editados", `As políticas, regras ou termos da loja foram alterados no painel.`, staffName);
   };
 
-  const resetToDefaults = () => {
+  const resetToDefaults = (staffName = "Admin / Staff") => {
     markLocalUpdate();
     setStoreState(DEFAULT_STATE);
+    storeStateRef.current = DEFAULT_STATE;
+    notifyDiscordLogs("Restauração Geral (Reset Padrão)", `A loja inteira foi restaurada para as configurações e produtos de fábrica por @${staffName}.`, staffName);
   };
 
   // --- Autenticação Discord (Simulada/Persistida) ---
@@ -528,7 +587,7 @@ export const StoreProvider = ({ children }) => {
   };
 
   // --- Central de Notificações Webhook do Discord ---
-  const notifyDiscordWebhook = async (embedData, overrideUrl = null) => {
+  const notifyDiscordWebhook = async (embedData, overrideUrl = null, contentText = null) => {
     const url = (overrideUrl || storeStateRef.current?.config?.webhookUrl || '').trim();
     if (!url || typeof url !== 'string' || !url.toLowerCase().includes('discord')) {
       console.warn("⚠️ Webhook URL do Discord ausente ou em formato inválido:", url);
@@ -539,6 +598,7 @@ export const StoreProvider = ({ children }) => {
     const payload = {
       username: `${storeName.substring(0, 60)} • Sistema Ao Vivo`,
       avatar_url: "https://i.imgur.com/8N40WzN.png",
+      ...(contentText ? { content: contentText } : {}),
       embeds: [{
         ...embedData,
         footer: { text: `${storeName} • Sistema Estilo GGMAX` },
@@ -564,24 +624,122 @@ export const StoreProvider = ({ children }) => {
     }
   };
 
-  const testDiscordWebhook = async (testUrl) => {
-    const targetUrl = (testUrl || storeStateRef.current?.config?.webhookUrl || '').trim();
+  const notifyDiscordLogs = async (action, details, staffName = "Staff / Admin") => {
+    const url = (storeStateRef.current?.config?.webhookLogsUrl || DEFAULT_STATE.config.webhookLogsUrl || '').trim();
+    if (!url || !url.toLowerCase().includes('discord')) return;
+
+    return await notifyDiscordWebhook({
+      title: `🛠️ [LOG DE ALTERAÇÃO NO SITE] • ${action}`,
+      description: `Uma modificação administrativa foi registrada no painel da **Blood Store**.`,
+      color: 3447003,
+      fields: [
+        { name: "👮 Staff / Administrador Responsável", value: `**${staffName}**`, inline: true },
+        { name: "📋 Ação Executada", value: `\`${action}\``, inline: true },
+        { name: "🕒 Horário do Registro", value: new Date().toLocaleTimeString('pt-BR'), inline: true },
+        { name: "📝 Detalhes da Modificação", value: `\`\`\`\n${details}\n\`\`\``, inline: false }
+      ]
+    }, url);
+  };
+
+  const notifyStaffStatus = async (staffUser, statusType = 'login', customMessage = null) => {
+    const url = (storeStateRef.current?.config?.webhookStaffJoinUrl || DEFAULT_STATE.config.webhookStaffJoinUrl || '').trim();
+    if (!url || !url.toLowerCase().includes('discord')) return;
+
+    const isLogin = statusType === 'login';
+    const staffName = staffUser?.name || staffUser?.username || 'Staff Desconhecido';
+    const staffUserTag = staffUser?.username || 'user';
+    const role = staffUser?.role || 'Membro da Equipe';
+
+    return await notifyDiscordWebhook({
+      title: isLogin ? `🟢 [STAFF ONLINE / ACESSO] • @${staffUserTag}` : `🔴 [STAFF OFFLINE / TURNO ENCERRADO] • @${staffUserTag}`,
+      description: customMessage || (isLogin 
+        ? `O membro da equipe **${staffName}** acabou de fazer login no painel de administração (\`/staff\`) e está **ONLINE** e ativo no atendimento!` 
+        : `O membro da equipe **${staffName}** encerrou sua sessão no painel administrativo e está **OFFLINE**.`),
+      color: isLogin ? 3066993 : 15158332,
+      fields: [
+        { name: "👮 Membro Staff", value: `**${staffName}** (\`${staffUserTag}\`)`, inline: true },
+        { name: "🛡️ Cargo / Função", value: `\`${role}\``, inline: true },
+        { name: "🕒 Horário de Registro", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
+      ]
+    }, url);
+  };
+
+  const testDiscordWebhook = async (testUrl, type = 'sales') => {
+    let targetUrl = testUrl?.trim();
     if (!targetUrl) {
-      alert("⚠️ Insira primeiro a URL do Webhook do Discord no campo e tente novamente!");
+      if (type === 'approval') targetUrl = storeStateRef.current?.config?.webhookApprovalUrl || DEFAULT_STATE.config.webhookApprovalUrl;
+      else if (type === 'rejected') targetUrl = storeStateRef.current?.config?.webhookRejectedUrl || DEFAULT_STATE.config.webhookRejectedUrl;
+      else if (type === 'logs') targetUrl = storeStateRef.current?.config?.webhookLogsUrl || DEFAULT_STATE.config.webhookLogsUrl;
+      else if (type === 'msgLogs') targetUrl = storeStateRef.current?.config?.webhookMsgLogsUrl || DEFAULT_STATE.config.webhookMsgLogsUrl;
+      else if (type === 'staffJoin') targetUrl = storeStateRef.current?.config?.webhookStaffJoinUrl || DEFAULT_STATE.config.webhookStaffJoinUrl;
+      else targetUrl = storeStateRef.current?.config?.webhookUrl || DEFAULT_STATE.config.webhookUrl;
+    }
+    targetUrl = (targetUrl || '').trim();
+    if (!targetUrl) {
+      alert("⚠️ Insira primeiro a URL do Webhook no campo e tente novamente!");
       return false;
     }
-    const result = await notifyDiscordWebhook({
-      title: "🔔 [TESTE DE DISPARO] • Webhook Conectado!",
-      description: "Se você está lendo esta mensagem no seu servidor do Discord, o sistema de avisos de compra da **Blood Store** está configurado e disparando em tempo real!",
-      color: 3845591,
-      fields: [
+
+    let title, description, color, fields;
+    if (type === 'approval') {
+      title = "✅ [TESTE DE DISPARO] • Webhook de Pedidos Aprovados";
+      description = "Este canal receberá alertas em tempo real sempre que um membro da **Staff** aprovar e entregar um pedido, exibindo o nome exato do staff responsável no topo!";
+      color = 2278690;
+      fields = [
+        { name: "👮 Staff Responsável (Aprovador)", value: "**Dono Supremo (xsag)**", inline: true },
+        { name: "📦 Produto Exemplo", value: "**Robux 10.000 (R$ 99,90)**", inline: true },
+        { name: "🕒 Horário do Teste", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
+      ];
+    } else if (type === 'rejected') {
+      title = "❌ [TESTE DE DISPARO] • Webhook de Pedidos Recusados / Reprovados";
+      description = "Este canal receberá alertas sempre que um comprovante ou pedido for reprovado, exibindo o motivo e quem reprovou.";
+      color = 13369344;
+      fields = [
+        { name: "👮 Staff Responsável (Reprovador)", value: "**Dono Supremo (xsag)**", inline: true },
+        { name: "⚠️ Motivo Exemplo", value: "`Comprovante ilegível ou PIX divergente`", inline: true },
+        { name: "🕒 Horário do Teste", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
+      ];
+    } else if (type === 'logs') {
+      title = "🛠️ [TESTE DE DISPARO] • Webhook de Logs de Alterações no Site";
+      description = "Este canal registrará um histórico contínuo (audit logs) de todas as modificações no site e painel administrativo (produtos, configs e equipe)!";
+      color = 3447003;
+      fields = [
+        { name: "👮 Administrador / Staff", value: "**Sistema de Auditoria Blood Store**", inline: true },
+        { name: "📋 Ação Simulada", value: "`Teste de Conexão do Webhook de Logs`", inline: true },
+        { name: "🕒 Horário do Teste", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
+      ];
+    } else if (type === 'msgLogs') {
+      title = "💬 [TESTE DE DISPARO] • Webhook de MNSG LOGS (Chat de Pedidos)";
+      description = "Este canal receberá uma cópia de **todas as mensagens no chat ao vivo** entre o cliente e a equipe Staff nos pedidos em andamento!";
+      color = 3717080;
+      fields = [
+        { name: "💬 Remetente Exemplo", value: "**Staff Blood Store**", inline: true },
+        { name: "📦 Pedido Exemplo", value: "**#ORD-98214**", inline: true },
+        { name: "🕒 Horário do Teste", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
+      ];
+    } else if (type === 'staffJoin') {
+      title = "🟢 [TESTE DE DISPARO] • Webhook de Monitoramento STAFF JOIN / ON";
+      description = "Este canal monitorará em tempo real todas as entradas (logins) e saídas (logouts) dos membros da Staff na área administrativa da loja!";
+      color = 3066993;
+      fields = [
+        { name: "👮 Staff Simulado", value: "**Dono Supremo (xsag)**", inline: true },
+        { name: "⚡ Status Simulado", value: "✅ **ONLINE NO PAINEL**", inline: true },
+        { name: "🕒 Horário do Teste", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
+      ];
+    } else {
+      title = "🔔 [TESTE DE DISPARO] • Webhook de Vendas & Pedidos";
+      description = "Se você está lendo esta mensagem no seu servidor do Discord, o sistema de avisos de compra da **Blood Store** está configurado e disparando em tempo real!";
+      color = 3845591;
+      fields = [
         { name: "⚡ Status", value: "✅ Conexão estabelecida com sucesso!", inline: true },
         { name: "🕒 Horário do Teste", value: new Date().toLocaleTimeString('pt-BR'), inline: true }
-      ]
-    }, targetUrl);
+      ];
+    }
+
+    const result = await notifyDiscordWebhook({ title, description, color, fields }, targetUrl);
 
     if (result && result.success) {
-      alert("✅ Teste de Webhook disparado com sucesso! Verifique o canal no seu Discord agora.");
+      alert("✅ Teste disparado com sucesso! Verifique o canal no seu Discord agora.");
       return true;
     } else {
       alert(`❌ Erro ao disparar Webhook (${result?.status || 'Conexão/CORS'}): ${result?.error || 'Verifique se a URL copiada do Discord está completa e correta'}`);
@@ -645,7 +803,8 @@ export const StoreProvider = ({ children }) => {
       orders: [newOrder, ...(prev.orders || [])]
     }));
 
-    // Notificar Webhook do Discord de Novo Pedido
+    // Notificar Webhook do Discord de Novo Pedido (MNSG LOGS)
+    const targetMsgUrl = storeStateRef.current?.config?.webhookMsgLogsUrl || DEFAULT_STATE.config.webhookMsgLogsUrl;
     notifyDiscordWebhook({
       title: `🩸 NOVO PEDIDO CONFIRMADO • ${orderNumber}`,
       description: `Um cliente iniciou o processo de compra do produto **${product.name}**.`,
@@ -655,9 +814,10 @@ export const StoreProvider = ({ children }) => {
         { name: "👤 Identificação do Cliente", value: `\`${cleanContactValue}\``, inline: true },
         { name: "📦 Produto", value: `**${product.name}**`, inline: true },
         { name: "💰 Valor", value: `**${product.priceText}**`, inline: true },
-        { name: "🔔 Próximo Passo", value: "Aguardando o cliente anexar o comprovante PIX na sala de chat (`/#/pedidos`).", inline: false }
+        { name: "🔔 Próximo Passo", value: "Aguardando o cliente anexar o comprovante PIX na sala de chat (`/#/pedidos`).", inline: false },
+        { name: "📢 Notificação", value: "@everyone", inline: false }
       ]
-    });
+    }, targetMsgUrl, "@everyone 🚨 **NOVO PEDIDO CONFIRMADO E INICIADO NA BLOOD STORE! ACOMPANHE O CHAT AGORA!**");
 
     return newOrder;
   };
@@ -690,6 +850,7 @@ export const StoreProvider = ({ children }) => {
 
     const targetOrd = (storeState.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
+      const targetMsgUrl = storeStateRef.current?.config?.webhookMsgLogsUrl || DEFAULT_STATE.config.webhookMsgLogsUrl;
       notifyDiscordWebhook({
         title: `📎 [NOVO COMPROVANTE PIX] • Pedido ${targetOrd.orderNumber}`,
         description: `O cliente **${targetOrd.buyer?.username || 'Cliente'}** anexou o comprovante de pagamento para **${targetOrd.product?.name}**!`,
@@ -700,7 +861,7 @@ export const StoreProvider = ({ children }) => {
           { name: "🔔 Status", value: "⚠️ **O pedido mudou para Em Análise. Acesse o Painel Staff (`/#/staff`) para conferir o print e aprovar.**", inline: false }
         ],
         image: { url: proofImageUrl }
-      });
+      }, targetMsgUrl);
     }
   };
 
@@ -739,23 +900,28 @@ export const StoreProvider = ({ children }) => {
           ]
         };
       });
-      return { ...prev, orders: updatedOrders };
+      const next = { ...prev, orders: updatedOrders };
+      storeStateRef.current = next;
+      return next;
     });
 
-    const targetOrd = (storeState.orders || []).find(o => o.id === orderId);
+    const targetOrd = (storeStateRef.current.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
       const isStaff = senderType === 'staff';
+      const msgLogsUrl = storeStateRef.current?.config?.webhookMsgLogsUrl || DEFAULT_STATE.config.webhookMsgLogsUrl;
+
       notifyDiscordWebhook({
-        title: isStaff ? `💬 [STAFF RESPONDENDO NO CHAT] • Pedido ${targetOrd.orderNumber}` : `💬 [MENSAGEM DO CLIENTE] • Pedido ${targetOrd.orderNumber}`,
+        title: isStaff ? `💬 [STAFF RESPONDENDO NO CHAT] • Pedido ${targetOrd.orderNumber}` : `💬 [MENSAGEM DO CLIENTE NO CHAT] • Pedido ${targetOrd.orderNumber}`,
         description: `**De:** ${cleanSender} (${isStaff ? 'Equipe Staff' : 'Cliente'})\n**Mensagem:**\n\`\`\`\n${cleanText || 'Anexo enviado'}\n\`\`\``,
         color: isStaff ? 16731136 : 3717080,
         fields: [
-          { name: "📦 Produto", value: `**${targetOrd.product?.name || 'Produto'}**`, inline: true },
-          { name: "👤 Cliente", value: `\`${targetOrd.buyer?.username || 'Usuário'}\``, inline: true },
+          { name: "👮 Autor / Remetente", value: `**${cleanSender}**`, inline: true },
+          { name: "📦 Produto do Pedido", value: `**${targetOrd.product?.name || 'Produto'}**`, inline: true },
+          { name: "👤 Cliente do Pedido", value: `\`${targetOrd.buyer?.username || 'Usuário'}\``, inline: true },
           ...(attachmentUrl ? [{ name: "📎 Anexo", value: `[Clique para visualizar o anexo](${attachmentUrl})`, inline: false }] : [])
         ],
         ...(attachmentUrl ? { image: { url: attachmentUrl } } : {})
-      });
+      }, msgLogsUrl);
     }
   };
 
@@ -784,20 +950,27 @@ export const StoreProvider = ({ children }) => {
           ]
         };
       });
-      return { ...prev, orders: updatedOrders };
+      const next = { ...prev, orders: updatedOrders };
+      storeStateRef.current = next;
+      return next;
     });
 
-    const targetOrd = (storeState.orders || []).find(o => o.id === orderId);
+    const targetOrd = (storeStateRef.current.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
+      const approvalUrl = storeStateRef.current?.config?.webhookApprovalUrl || DEFAULT_STATE.config.webhookApprovalUrl;
       notifyDiscordWebhook({
-        title: `✅ [PAGAMENTO APROVADO & PRODUTO ENTREGUE] • Pedido ${targetOrd.orderNumber}`,
-        description: `O Staff **${cleanStaff}** confirmou o pagamento de **${targetOrd.product?.name}** e liberou o produto na caixa secreta do cliente no chat!`,
+        title: `✅ [PEDIDO APROVADO & ENTREGUE]  • Pedido ${targetOrd.orderNumber}`,
+        description: `O Staff **${cleanStaff}** confirmou o pagamento de **${targetOrd.product?.name}** e liberou a entrega no chat secreto do pedido!`,
         color: 2278690,
         fields: [
+          { name: "👮 Staff Responsável (Aprovou & Entregou)", value: `**${cleanStaff}**`, inline: true },
           { name: "📦 Produto", value: `**${targetOrd.product?.name}** (${targetOrd.product?.priceText})`, inline: true },
-          { name: "👤 Cliente", value: `\`${targetOrd.buyer?.username}\``, inline: true }
+          { name: "👤 Cliente", value: `\`${targetOrd.buyer?.username || 'Usuário'}\``, inline: true },
+          { name: "📬 Contato do Cliente", value: `\`${targetOrd.contactMethod || 'Chat'}: ${targetOrd.contactValue || ''}\``, inline: false },
+          { name: "🎁 Conteúdo da Entrega", value: "✅ Liberado na sala de chat e caixa secreta do comprador.", inline: false },
+          { name: "📢 Notificação", value: "@everyone", inline: true }
         ]
-      });
+      }, approvalUrl, `@everyone 🎉 **PEDIDO APROVADO E PRODUTO ENTREGUE COM SUCESSO PELA STAFF (${cleanStaff})!**`);
     }
   };
 
@@ -826,21 +999,25 @@ export const StoreProvider = ({ children }) => {
           ]
         };
       });
-      return { ...prev, orders: updatedOrders };
+      const next = { ...prev, orders: updatedOrders };
+      storeStateRef.current = next;
+      return next;
     });
 
-    const targetOrd = (storeState.orders || []).find(o => o.id === orderId);
+    const targetOrd = (storeStateRef.current.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
+      const rejectedUrl = storeStateRef.current?.config?.webhookRejectedUrl || DEFAULT_STATE.config.webhookRejectedUrl;
       notifyDiscordWebhook({
-        title: `❌ [PEDIDO REPROVADO / CANCELADO] • Pedido ${targetOrd.orderNumber}`,
+        title: `❌ [PEDIDO / COMPROVANTE REPROVADO] • Pedido ${targetOrd.orderNumber}`,
         description: `O Staff **${cleanStaff}** reprovou o comprovante / pedido.`,
         color: 13369344,
         fields: [
+          { name: "👮 Staff Responsável (Reprovou)", value: `**${cleanStaff}**`, inline: true },
           { name: "📦 Produto", value: `**${targetOrd.product?.name}**`, inline: true },
           { name: "👤 Cliente", value: `\`${targetOrd.buyer?.username}\``, inline: true },
-          { name: "⚠️ Motivo", value: `\`${cleanReason}\``, inline: false }
+          { name: "⚠️ Motivo da Reprovação", value: `\`\`\`\n${cleanReason}\n\`\`\``, inline: false }
         ]
-      });
+      }, rejectedUrl);
     }
   };
 
@@ -869,6 +1046,7 @@ export const StoreProvider = ({ children }) => {
       addOrderMessage,
       approveAndDeliverOrder,
       rejectOrder,
+      notifyStaffStatus,
       testDiscordWebhook
     }}>
       {children}
