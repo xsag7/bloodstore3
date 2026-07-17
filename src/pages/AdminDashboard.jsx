@@ -87,7 +87,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   const [cfgWebhookUrl, setCfgWebhookUrl] = useState(config.webhookUrl);
   const [cfgPixKey, setCfgPixKey] = useState(config.pixKey);
   const [cfgLogoUrl, setCfgLogoUrl] = useState(config.logoUrl || '/fotos e videos/BloodstoreLogo1.png');
-  const [cfgBannerVideoUrl, setCfgBannerVideoUrl] = useState(config.bannerVideoUrl || '/fotos e videos/animation.mp4');
+  const [cfgBannerVideoUrl, setCfgBannerVideoUrl] = useState(config.bannerVideoUrl || '/fotos e videos/BloodstoreLogo2.png');
 
   const handleFileUpload = (e, setter) => {
     const file = e.target.files[0];
@@ -283,7 +283,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
             onClick={() => setActiveTab('orders')}
             style={{ fontWeight: activeTab === 'orders' ? '700' : '500', color: activeTab === 'orders' ? '#22c55e' : '' }}
           >
-            <i className="fa-solid fa-box-open"></i> Gestão de Pedidos & Chat ({orders.length})
+            <i className="fa-solid fa-comments text-red"></i> Chats e Pedidos ({orders.filter(o => o.status !== 'aprovado_entregue' && o.status !== 'cancelado').length} pendentes)
           </button>
           <button 
             className={`admin-nav-item ${activeTab === 'products' ? 'active' : ''}`}
@@ -334,14 +334,18 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       <main className="admin-main-content">
         <header className="admin-topbar">
           <h2>
-            {activeTab === 'orders' && <><i className="fa-solid fa-box-open text-red"></i> Gestão de Pedidos & Atendimento ao Vivo</>}
+            {activeTab === 'orders' && <><i className="fa-solid fa-comments text-red"></i> Chats e Pedidos (Atendimento em Tempo Real sem F5)</>}
             {activeTab === 'products' && <><i className="fa-solid fa-boxes-stacked text-red"></i> Gerenciamento de Produtos (CRUD & PIX)</>}
             {activeTab === 'config' && <><i className="fa-solid fa-gear text-red"></i> Configurações Globais & Webhook Discord</>}
             {activeTab === 'terms' && <><i className="fa-solid fa-file-contract text-red"></i> Edição de Termos e Políticas</>}
             {activeTab === 'staff' && <><i className="fa-solid fa-user-shield text-red"></i> Gestão de Usuários da Equipe Staff & Sub-Admins</>}
           </h2>
           <div className="admin-actions">
-            <span style={{ fontSize: '0.85rem', color: '#a0a0b0' }}>Modo Staff Ativo</span>
+            <span style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #22c55e' }}></span>
+              Tempo Real Sem F5 Ativo
+            </span>
+            <span style={{ fontSize: '0.85rem', color: '#a0a0b0' }}>Modo Staff</span>
           </div>
         </header>
 

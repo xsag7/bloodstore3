@@ -3,7 +3,7 @@ import { useStore } from '../context/StoreContext';
 
 export const Hero = () => {
   const { config } = useStore();
-  const bannerUrl = config.bannerVideoUrl || "/fotos e videos/animation.mp4";
+  const bannerUrl = config.bannerVideoUrl || "/fotos e videos/BloodstoreLogo2.png";
   const isVideo = bannerUrl.toLowerCase().endsWith('.mp4') || bannerUrl.toLowerCase().endsWith('.webm') || bannerUrl.startsWith('data:video');
 
   return (
