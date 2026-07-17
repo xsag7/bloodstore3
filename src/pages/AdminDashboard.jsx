@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 
 export const AdminDashboard = ({ onExitAdmin }) => {
@@ -27,6 +27,14 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'products' | 'config' | 'terms' | 'staff'
+
+  const adminChatEndRef = useRef(null);
+
+  useEffect(() => {
+    if (adminChatEndRef.current) {
+      adminChatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [orders]);
 
   // Estados da aba de Gestão de Pedidos / Chat ao Vivo
   const [selectedAdminOrderId, setSelectedAdminOrderId] = useState(null);
@@ -334,7 +342,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       <main className="admin-main-content">
         <header className="admin-topbar">
           <h2>
-            {activeTab === 'orders' && <><i className="fa-solid fa-comments text-red"></i> Chats e Pedidos (Atendimento em Tempo Real sem F5)</>}
+            {activeTab === 'orders' && <><i className="fa-solid fa-comments text-red"></i> Chats e Pedidos (Atendimento em Tempo Real)</>}
             {activeTab === 'products' && <><i className="fa-solid fa-boxes-stacked text-red"></i> Gerenciamento de Produtos (CRUD & PIX)</>}
             {activeTab === 'config' && <><i className="fa-solid fa-gear text-red"></i> Configurações Globais & Webhook Discord</>}
             {activeTab === 'terms' && <><i className="fa-solid fa-file-contract text-red"></i> Edição de Termos e Políticas</>}
@@ -343,7 +351,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
           <div className="admin-actions">
             <span style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #22c55e' }}></span>
-              Tempo Real Sem F5 Ativo
+              temp real
             </span>
             <span style={{ fontSize: '0.85rem', color: '#a0a0b0' }}>Modo Staff</span>
           </div>
@@ -580,6 +588,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                               </div>
                             );
                           })}
+                          <div ref={adminChatEndRef} />
                         </div>
 
                         {/* INPUT PARA STAFF RESPONDER NO CHAT */}

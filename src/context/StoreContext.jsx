@@ -276,21 +276,41 @@ export const StoreProvider = ({ children }) => {
     // 1. Carregamento instantâneo no boot
     loadFromCloud();
 
-    // 2. Assinatura Real-Time via WebSocket (Supabase Realtime)
+    // 2. Assinatura Real-Time via WebSocket (Supabase Realtime + Broadcast de Chat)
     let channel = null;
+    let broadcastChannel = null;
     if (supabase) {
+      // Canal de mudanças no banco PostgreSQL (postgres_changes)
       channel = supabase
         .channel('public:store_state_realtime')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'store_state' }, (payload) => {
           if (payload.new && payload.new.id === 'global_state') {
-            console.log('⚡ [Realtime Supabase] Novo pedido ou chat recebido sem F5!');
+            console.log('⚡ [Realtime Postgres] Nova alteração no banco recebida sem F5!');
             applyCloudData(payload.new);
+          } else {
+            loadFromCloud();
+          }
+        })
+        .subscribe();
+
+      // Canal de Broadcast WebSocket direto para Chat instantâneo (latência ~50ms entre computadores/celulares)
+      broadcastChannel = supabase
+        .channel('bloodstore_live_sync')
+        .on('broadcast', { event: 'STATE_CHANGED' }, (payload) => {
+          console.log('💬 [Realtime Broadcast] Mensagem instantânea de chat recebida via WebSocket!');
+          if (payload.payload && payload.payload.state) {
+            setStoreState(prev => {
+              if (JSON.stringify(prev) === JSON.stringify(payload.payload.state)) return prev;
+              return payload.payload.state;
+            });
+          } else {
+            loadFromCloud();
           }
         })
         .subscribe();
     }
 
-    // 3. Sincronização entre abas no mesmo navegador (BroadcastChannel)
+    // 3. Sincronização entre abas no mesmo navegador (BroadcastChannel local 0ms)
     let bc = null;
     if (typeof window !== 'undefined' && window.BroadcastChannel) {
       bc = new BroadcastChannel('bloodstore_sync_channel');
@@ -304,13 +324,14 @@ export const StoreProvider = ({ children }) => {
       };
     }
 
-    // 4. Polling silencioso de 4 segundos como garantia máxima (sem F5) caso o WebSocket oscile
+    // 4. Polling rápido de 1.5 segundos como garantia máxima absoluta (sem F5) caso o WebSocket oscile
     const interval = setInterval(() => {
       loadFromCloud();
-    }, 4000);
+    }, 1500);
 
     return () => {
       if (channel && supabase) supabase.removeChannel(channel);
+      if (broadcastChannel && supabase) supabase.removeChannel(broadcastChannel);
       if (bc) bc.close();
       clearInterval(interval);
     };
@@ -330,6 +351,17 @@ export const StoreProvider = ({ children }) => {
         const bc = new BroadcastChannel('bloodstore_sync_channel');
         bc.postMessage({ type: 'STATE_UPDATE', state: storeState });
         bc.close();
+      } catch (e) {}
+    }
+
+    // Broadcast via Supabase WebSocket para outros computadores e celulares conectados instantaneamente (~50ms)
+    if (supabase) {
+      try {
+        supabase.channel('bloodstore_live_sync').send({
+          type: 'broadcast',
+          event: 'STATE_CHANGED',
+          payload: { timestamp: Date.now(), state: storeState }
+        });
       } catch (e) {}
     }
 

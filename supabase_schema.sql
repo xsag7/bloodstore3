@@ -185,3 +185,22 @@ VALUES (
   ]'::jsonb
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- 6. Configurar Replica Identity para FULL para garantir que o Supabase Realtime envie todos os dados no payload de atualização
+ALTER TABLE public.store_state REPLICA IDENTITY FULL;
+
+-- 7. Habilitar a tabela store_state na publicação do Supabase Realtime
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_rel pr
+    JOIN pg_publication p ON p.oid = pr.prpubid
+    JOIN pg_class c ON c.oid = pr.prrelid
+    WHERE p.pubname = 'supabase_realtime' AND c.relname = 'store_state'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.store_state;
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE NOTICE 'A publicação supabase_realtime pode não existir ou já conter a tabela.';
+END $$;
