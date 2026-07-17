@@ -171,7 +171,7 @@ VALUES (
     {
       "id": "owner-xsag",
       "username": "xsag",
-      "password": "penismurcho",
+      "password": "8254",
       "role": "owner",
       "name": "Dono Supremo (xsag)",
       "permissions": {
