@@ -9,6 +9,11 @@ export const ProductCard = ({ product, onSelectProduct }) => {
     <div className="product-card">
       <div>
         <div className="product-img-box">
+          {product.category && (
+            <span className="product-category-badge">
+              <i className="fa-solid fa-tag"></i> {product.category}
+            </span>
+          )}
           <img 
             src={product.image || "/fotos e videos/robux.png"} 
             onError={(e) => {

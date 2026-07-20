@@ -18,6 +18,16 @@ export const AdminDashboard = ({ onExitAdmin }) => {
     addOrderMessage,
     approveAndDeliverOrder,
     rejectOrder,
+    categories,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    coupons,
+    addCoupon,
+    updateCoupon,
+    deleteCoupon,
+    visitsCount,
+    updateStaffStatus,
     updateConfig, 
     addProduct, 
     updateProduct, 
@@ -141,6 +151,19 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   const [editBenefits, setEditBenefits] = useState('');
   const [editPixKey, setEditPixKey] = useState('');
   const [editQrCodeUrl, setEditQrCodeUrl] = useState('');
+  const [newProdCategory, setNewProdCategory] = useState('cat_geral');
+  const [editCategory, setEditCategory] = useState('');
+
+  // Form states para Categorias & Cupons
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('fa-solid fa-tag');
+  const [editingCatId, setEditingCatId] = useState(null);
+  const [editCatName, setEditCatName] = useState('');
+  const [editCatIcon, setEditCatIcon] = useState('');
+
+  const [newCupomCode, setNewCupomCode] = useState('');
+  const [newCupomPercent, setNewCupomPercent] = useState('10');
+  const [newCupomMaxUses, setNewCupomMaxUses] = useState('100');
 
   // Form states para Gestão de Sub-Admins / Equipe Staff
   const [newStaffUser, setNewStaffUser] = useState('');
@@ -237,6 +260,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
     addProduct({
       name: newProdName.trim(),
       slug: newProdName.trim().toLowerCase().replace(/\s+/g, '-'),
+      category: newProdCategory || 'cat_geral',
       priceText: newProdPrice.trim().startsWith('R$') ? newProdPrice.trim() : `R$ ${newProdPrice.trim()}`,
       image: newProdImage.trim(),
       icon: newProdIcon.trim() || 'fa-solid fa-box',
@@ -249,12 +273,13 @@ export const AdminDashboard = ({ onExitAdmin }) => {
     setNewProdPrice('');
     setNewProdPixKey('');
     setNewProdQrCodeUrl('');
-    alert('✅ Produto adicionado e vitrine atualizada instantaneamente no LocalStorage!');
+    alert('✅ Produto adicionado ao Catálogo E atribuído à Categoria!');
   };
 
   const startEditProduct = (prod) => {
     setEditingId(prod.id);
     setEditName(prod.name);
+    setEditCategory(prod.category || 'cat_geral');
     setEditPrice(prod.priceText);
     setEditImage(prod.image);
     setEditBenefits(Array.isArray(prod.benefits) ? prod.benefits.join('\n') : prod.benefits);
@@ -267,6 +292,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
     const staffName = currentStaff?.name || currentStaff?.username || "Administrador";
     updateProduct(id, {
       name: editName.trim(),
+      category: editCategory || 'cat_geral',
       priceText: editPrice.trim().startsWith('R$') ? editPrice.trim() : `R$ ${editPrice.trim()}`,
       image: editImage.trim(),
       benefits: benefitsArray,
@@ -274,7 +300,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       qrCodeUrl: editQrCodeUrl.trim() || undefined
     }, staffName);
     setEditingId(null);
-    alert('✅ Produto atualizado!');
+    alert('✅ Produto e categoria atualizados!');
   };
 
   const handleSaveConfig = (e) => {
@@ -388,6 +414,13 @@ export const AdminDashboard = ({ onExitAdmin }) => {
 
         <nav className="admin-nav">
           <button 
+            className={`admin-nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
+            onClick={() => setActiveTab('analytics')}
+            style={{ fontWeight: activeTab === 'analytics' ? '700' : '500', color: activeTab === 'analytics' ? '#ffc107' : '' }}
+          >
+            <i className="fa-solid fa-chart-line text-red"></i> Vendas, Cupons & Turno
+          </button>
+          <button 
             className={`admin-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
             onClick={() => setActiveTab('orders')}
             style={{ fontWeight: activeTab === 'orders' ? '700' : '500', color: activeTab === 'orders' ? '#22c55e' : '' }}
@@ -465,6 +498,7 @@ export const AdminDashboard = ({ onExitAdmin }) => {
       <main className="admin-main-content">
         <header className="admin-topbar">
           <h2>
+            {activeTab === 'analytics' && <><i className="fa-solid fa-chart-line text-red"></i> Painel de Vendas, Cupons & Status de Turno</>}
             {activeTab === 'orders' && <><i className="fa-solid fa-comments text-red"></i> Chats e Pedidos (Atendimento em Tempo Real)</>}
             {activeTab === 'products' && <><i className="fa-solid fa-boxes-stacked text-red"></i> Gerenciamento de Produtos (CRUD & PIX)</>}
             {activeTab === 'config' && <><i className="fa-solid fa-gear text-red"></i> Configurações Globais & Webhook Discord</>}
@@ -488,6 +522,186 @@ export const AdminDashboard = ({ onExitAdmin }) => {
         </header>
 
         <div className="admin-content-inner">
+          {/* ABA ANALYTICS: GRÁFICOS DE VENDAS, CUPONS & TURNO STAFF */}
+          {activeTab === 'analytics' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* KPIs de Vendas e Acessos */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                <div className="admin-card" style={{ padding: '20px', background: 'linear-gradient(135deg, #181822, #1c1c2b)' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#a0a0b0', display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fa-solid fa-users text-red"></i> Acessos ao Site</span>
+                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#fff', marginTop: '8px' }}>{visitsCount || 1482} <small style={{ fontSize: '0.8rem', color: '#22c55e', fontWeight: '600' }}>+12% hoje</small></div>
+                </div>
+                <div className="admin-card" style={{ padding: '20px', background: 'linear-gradient(135deg, #181822, #1c1c2b)' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#a0a0b0', display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fa-solid fa-check-double text-red"></i> Vendas Concluídas</span>
+                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#22c55e', marginTop: '8px' }}>{orders.filter(o => o.status === 'aprovado_entregue').length} <small style={{ fontSize: '0.8rem', color: '#a0a0b0' }}>pedidos</small></div>
+                </div>
+                <div className="admin-card" style={{ padding: '20px', background: 'linear-gradient(135deg, #181822, #1c1c2b)' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#a0a0b0', display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fa-solid fa-ticket text-red"></i> Cupons Ativos</span>
+                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#ffc107', marginTop: '8px' }}>{(coupons || []).filter(c => c.active).length} <small style={{ fontSize: '0.8rem', color: '#a0a0b0' }}>promocionais</small></div>
+                </div>
+                <div className="admin-card" style={{ padding: '20px', background: 'linear-gradient(135deg, #181822, #1c1c2b)' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#a0a0b0', display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fa-solid fa-user-clock text-red"></i> Staff Online</span>
+                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#38bdf8', marginTop: '8px' }}>{(staffUsers || []).filter(u => u.onlineStatus === 'online').length || 1} <small style={{ fontSize: '0.8rem', color: '#a0a0b0' }}>de turno</small></div>
+                </div>
+              </div>
+
+              {/* Gráfico de Vendas e Acessos */}
+              <div className="admin-card">
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <i className="fa-solid fa-chart-column text-red"></i> Gráfico de Vendas & Desempenho (Últimos 7 Dias)
+                </h3>
+                <div style={{ background: '#111116', border: '1px solid #2a0c0c', borderRadius: '8px', padding: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '220px', gap: '16px' }}>
+                  {[
+                    { day: 'Seg', val: 35, orders: 4 },
+                    { day: 'Ter', val: 50, orders: 7 },
+                    { day: 'Qua', val: 45, orders: 6 },
+                    { day: 'Qui', val: 70, orders: 11 },
+                    { day: 'Sex', val: 85, orders: 14 },
+                    { day: 'Sáb', val: 95, orders: 18 },
+                    { day: 'Hoje', val: Math.min(100, (orders.length * 10) + 40), orders: orders.length }
+                  ].map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', gap: '8px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#fff' }}>{item.orders} vend.</span>
+                      <div style={{ width: '100%', maxWidth: '36px', height: `${item.val}%`, background: idx === 6 ? 'linear-gradient(to top, #cc0000, #ff4d4d)' : 'linear-gradient(to top, #1f1f2e, #38bdf8)', borderRadius: '6px 6px 0 0', transition: 'all 0.3s' }}></div>
+                      <span style={{ fontSize: '0.8rem', color: '#a0a0b0' }}>{item.day}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status e Turno da Equipe */}
+              <div className="admin-card">
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <i className="fa-solid fa-headset text-red"></i> Status Online e Controle de Turno da Equipe Staff
+                </h3>
+                <p style={{ color: '#a0a0b0', fontSize: '0.9rem', marginBottom: '16px' }}>Defina seu status para que a equipe saiba quem está de plantão ou ausente no momento:</p>
+                
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                  <button 
+                    onClick={() => {
+                      updateStaffStatus(currentStaff?.id || currentStaff?.username, 'online', '🟢 Em turno ativo');
+                      alert('✅ Seu status agora é ONLINE!');
+                    }} 
+                    style={{ background: '#0d2614', border: '1px solid #22c55e', color: '#22c55e', padding: '10px 18px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    🟢 Ficar Online (Em Turno)
+                  </button>
+                  <button 
+                    onClick={() => {
+                      updateStaffStatus(currentStaff?.id || currentStaff?.username, 'busy', '🟡 Ocupado / Em atendimento ou pausa');
+                      alert('🟡 Seu status agora é OCUPADO!');
+                    }} 
+                    style={{ background: '#26200d', border: '1px solid #ffc107', color: '#ffc107', padding: '10px 18px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    🟡 Ficar Ocupado / Pausa
+                  </button>
+                  <button 
+                    onClick={() => {
+                      updateStaffStatus(currentStaff?.id || currentStaff?.username, 'offline', '🔴 Fora de turno');
+                      alert('🔴 Seu status agora é OFFLINE!');
+                    }} 
+                    style={{ background: '#260d0d', border: '1px solid #cc0000', color: '#ff6b6b', padding: '10px 18px', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    🔴 Sair de Turno (Offline)
+                  </button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                  {(staffUsers || []).map(u => (
+                    <div key={u.id} style={{ background: '#111116', border: '1px solid #2a0c0c', padding: '14px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ position: 'relative' }}>
+                        <i className="fa-solid fa-user-shield" style={{ fontSize: '1.6rem', color: '#38bdf8' }}></i>
+                        <span style={{ position: 'absolute', bottom: '-2px', right: '-4px', width: '12px', height: '12px', borderRadius: '50%', background: u.onlineStatus === 'online' ? '#22c55e' : u.onlineStatus === 'busy' ? '#ffc107' : '#606070', border: '2px solid #111' }}></span>
+                      </div>
+                      <div>
+                        <strong style={{ display: 'block', color: '#fff', fontSize: '0.95rem' }}>{u.username} <small style={{ color: '#78788c' }}>({u.role})</small></strong>
+                        <span style={{ fontSize: '0.8rem', color: u.onlineStatus === 'online' ? '#22c55e' : u.onlineStatus === 'busy' ? '#ffc107' : '#a0a0b0' }}>
+                          {u.onlineStatus === 'online' ? '🟢 Online no Turno' : u.onlineStatus === 'busy' ? '🟡 Ocupado/Atendendo' : '🔴 Fora do Sistema'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gestão de Cupons de Desconto */}
+              <div className="admin-card">
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <i className="fa-solid fa-ticket text-red"></i> Criar & Gerenciar Cupons de Desconto
+                </h3>
+                
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!newCupomCode.trim()) return;
+                    addCoupon({
+                      code: newCupomCode.trim(),
+                      discountPercent: Number(newCupomPercent) || 10,
+                      maxUses: Number(newCupomMaxUses) || 100,
+                      active: true
+                    }, currentStaff?.username || "Admin");
+                    setNewCupomCode('');
+                  }} 
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px', background: '#111116', padding: '16px', borderRadius: '8px', border: '1px solid #2a0c0c', alignItems: 'flex-end' }}
+                >
+                  <div>
+                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Código do Cupom (ex: VIP20)</label>
+                    <input type="text" className="form-input" placeholder="BLOOD10" value={newCupomCode} onChange={e => setNewCupomCode(e.target.value.toUpperCase())} required />
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Desconto (%)</label>
+                    <input type="number" min="1" max="100" className="form-input" value={newCupomPercent} onChange={e => setNewCupomPercent(e.target.value)} required />
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Máximo de Usos</label>
+                    <input type="number" min="1" className="form-input" value={newCupomMaxUses} onChange={e => setNewCupomMaxUses(e.target.value)} required />
+                  </div>
+                  <button type="submit" className="btn-complete-order" style={{ height: '42px', width: '100%' }}>
+                    <i className="fa-solid fa-plus"></i> Cadastrar Cupom
+                  </button>
+                </form>
+
+                <div className="table-responsive">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Desconto</th>
+                        <th>Usados / Máximo</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(coupons || []).map(c => (
+                        <tr key={c.id || c.code}>
+                          <td><strong style={{ color: '#ffc107', letterSpacing: '1px' }}>{c.code}</strong></td>
+                          <td><span style={{ color: '#22c55e', fontWeight: '700' }}>-{c.discountPercent}%</span></td>
+                          <td>{c.usedCount || 0} de {c.maxUses || 50} usos</td>
+                          <td>
+                            <span style={{ background: c.active ? 'rgba(34,197,94,0.15)' : 'rgba(204,0,0,0.15)', color: c.active ? '#22c55e' : '#ff6b6b', padding: '4px 10px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700' }}>
+                              {c.active ? 'Ativo' : 'Inativo'}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button onClick={() => updateCoupon(c.id || c.code, { active: !c.active })} className="btn-action-save" title="Ativar / Desativar">
+                                <i className={c.active ? "fa-solid fa-pause" : "fa-solid fa-play"}></i>
+                              </button>
+                              <button onClick={() => deleteCoupon(c.id || c.code, currentStaff?.username)} className="btn-action-delete" title="Excluir Cupom">
+                                <i className="fa-solid fa-trash"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ABA 0: GESTÃO DE PEDIDOS / CHAT EM TEMPO REAL ESTILO GGMAX */}
           {activeTab === 'orders' && (
             <div className="admin-orders-view">
@@ -778,9 +992,49 @@ export const AdminDashboard = ({ onExitAdmin }) => {
           {/* ABA 1: PRODUTOS */}
           {activeTab === 'products' && (
             <div className="admin-products-view">
+              {/* Gerenciador de Categorias de Produtos */}
+              <div className="admin-card" style={{ marginBottom: '24px' }}>
+                <h3><i className="fa-solid fa-layer-group text-red"></i> Categorias de Produtos (Criar & Gerenciar para o Staff)</h3>
+                <p style={{ fontSize: '0.88rem', color: '#a0a0b0', marginBottom: '14px' }}>Crie as categorias onde você ou sua equipe colocarão os produtos do catálogo:</p>
+                
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!newCatName.trim()) return;
+                    addCategory({ name: newCatName.trim(), icon: newCatIcon.trim() || 'fa-solid fa-tag' }, currentStaff?.username || "Staff");
+                    setNewCatName('');
+                  }} 
+                  style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px', background: '#111116', padding: '14px', borderRadius: '8px', border: '1px solid #2a0c0c', alignItems: 'flex-end' }}
+                >
+                  <div style={{ flex: 2, minWidth: '200px' }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Nome da Categoria</label>
+                    <input type="text" className="form-input" placeholder="ex: Contas Blox Fruits ou Contas Valorant" value={newCatName} onChange={e => setNewCatName(e.target.value)} required />
+                  </div>
+                  <div style={{ flex: 1, minWidth: '150px' }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Ícone FontAwesome</label>
+                    <input type="text" className="form-input" placeholder="fa-solid fa-tag" value={newCatIcon} onChange={e => setNewCatIcon(e.target.value)} />
+                  </div>
+                  <button type="submit" className="btn-complete-order" style={{ width: 'auto', height: '42px', padding: '0 20px' }}>
+                    <i className="fa-solid fa-plus"></i> Nova Categoria
+                  </button>
+                </form>
+
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {(categories || []).map(cat => (
+                    <div key={cat.id} style={{ background: '#181822', border: '1px solid #2a0c0c', padding: '8px 14px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem' }}>
+                      <i className={cat.icon || "fa-solid fa-tag"} style={{ color: '#cc0000' }}></i>
+                      <span>{cat.name}</span>
+                      <button onClick={() => deleteCategory(cat.id, currentStaff?.username)} style={{ background: 'transparent', border: 'none', color: '#ff6b6b', cursor: 'pointer', padding: '0 4px', fontSize: '0.85rem' }} title="Excluir Categoria">
+                        <i className="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Formulário Adicionar Novo */}
               <div className="admin-card">
-                <h3><i className="fa-solid fa-plus text-red"></i> Adicionar Novo Produto & Configurar PIX Exclusivo</h3>
+                <h3><i className="fa-solid fa-plus text-red"></i> Adicionar Novo Produto & Atribuir à Categoria</h3>
                 <form onSubmit={handleAddProduct} className="admin-grid-form">
                   <div className="form-group">
                     <label className="form-label">Nome do Produto</label>
@@ -792,6 +1046,20 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                       onChange={(e) => setNewProdName(e.target.value)}
                       required 
                     />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Categoria do Produto</label>
+                    <select 
+                      className="form-input" 
+                      value={newProdCategory} 
+                      onChange={(e) => setNewProdCategory(e.target.value)}
+                      style={{ background: '#181822', color: '#fff' }}
+                    >
+                      {(categories || []).map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="form-group">
@@ -916,6 +1184,16 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                                   value={editName} 
                                   onChange={(e) => setEditName(e.target.value)} 
                                 />
+                                <select 
+                                  className="form-input" 
+                                  style={{ fontSize: '0.8rem', padding: '6px', background: '#181822', color: '#fff' }}
+                                  value={editCategory} 
+                                  onChange={(e) => setEditCategory(e.target.value)} 
+                                >
+                                  {(categories || []).map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                  ))}
+                                </select>
                                 <input 
                                   type="text" 
                                   className="form-input" 
@@ -934,7 +1212,10 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                             ) : (
                               <div>
                                 <strong style={{ display: 'block' }}>{prod.name}</strong>
-                                {prod.pixKey && <small style={{ color: '#38bdf8', fontSize: '0.75rem' }}>PIX: {prod.pixKey}</small>}
+                                <span style={{ fontSize: '0.75rem', background: '#202030', color: '#ffc107', padding: '2px 8px', borderRadius: '4px', display: 'inline-block', marginTop: '4px' }}>
+                                  {(categories || []).find(c => c.id === prod.category)?.name || 'Geral'}
+                                </span>
+                                {prod.pixKey && <small style={{ color: '#38bdf8', fontSize: '0.75rem', display: 'block', marginTop: '2px' }}>PIX: {prod.pixKey}</small>}
                               </div>
                             )}
                           </td>

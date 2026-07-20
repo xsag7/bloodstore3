@@ -7,7 +7,12 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
   const { config, currentUser, orders, sendOrderProof, addOrderMessage } = useStore();
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [chatInput, setChatInput] = useState('');
+  
+  // Estado para o texto digitado no input sem disparar busca automática
+  const [inputNick, setInputNick] = useState('');
+  // Estado da busca ativa após clicar no botão
   const [searchQuery, setSearchQuery] = useState('');
+  
   const [uploadingProof, setUploadingProof] = useState(false);
   const [uploadingChatImg, setUploadingChatImg] = useState(false);
   const chatContainerRef = useRef(null);
@@ -34,15 +39,19 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
     );
     const isOwner = isOwnerBySavedId || isOwnerByContact;
 
-    if (!isOwner) return false;
-    if (!searchQuery.trim()) return true;
+    if (!isOwner && !searchQuery.trim()) return false;
 
-    const query = searchQuery.toLowerCase();
-    return (
-      ord.orderNumber?.toLowerCase().includes(query) ||
-      ord.product?.name?.toLowerCase().includes(query) ||
-      ord.status?.toLowerCase().includes(query)
-    );
+    // Se há uma busca ativa submetida pelo botão
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const matchesQuery = ord.orderNumber?.toLowerCase().includes(query) ||
+        ord.contactValue?.toLowerCase().includes(query) ||
+        ord.buyer?.username?.toLowerCase().includes(query) ||
+        ord.product?.name?.toLowerCase().includes(query);
+      return matchesQuery || isOwner;
+    }
+
+    return isOwner;
   });
 
   const selectedOrder = userOrders.find(o => o.id === selectedOrderId) || userOrders[0];
@@ -111,9 +120,12 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
 
   const handleSaveAccessName = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      localStorage.setItem('bloodstore_client_name', searchQuery.trim());
+    if (inputNick.trim()) {
+      localStorage.setItem('bloodstore_client_name', inputNick.trim());
+      setSearchQuery(inputNick.trim());
       setSelectedOrderId(null);
+    } else {
+      alert("⚠️ Digite o número do pedido (#1234), seu nick do Discord ou e-mail antes de clicar no botão.");
     }
   };
 
@@ -132,8 +144,8 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
     }
   };
 
-  // Se não há pedidos listados e o usuário ainda não procurou
-  if (myOrders.length === 0 && !searchQuery.trim()) {
+  // Se não há pedidos listados e o usuário ainda não confirmou o nick/busca clicando no botão
+  if (!clientName && !searchQuery.trim() && myOrders.length === 0) {
     return (
       <div style={{ minHeight: '100vh', background: '#111116', color: '#fff', display: 'flex', flexDirection: 'column' }}>
         <header className="checkout-topbar" style={{ borderBottom: '1px solid #2a0c0c', background: '#14141e' }}>
@@ -161,8 +173,8 @@ export const ClientOrdersPage = ({ onBackToStore }) => {
               <input 
                 type="text" 
                 placeholder="ex: #1234, fulanogamer ou seu@email.com" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={inputNick}
+                onChange={(e) => setInputNick(e.target.value)}
                 style={{ background: '#111116', border: '1px solid #333', color: '#fff', padding: '12px 16px', borderRadius: '8px', fontSize: '0.95rem', width: '100%', textAlign: 'center' }}
                 autoFocus
                 required

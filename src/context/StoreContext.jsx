@@ -37,6 +37,19 @@ const DEFAULT_STATE = {
       }
     }
   ],
+  categories: [
+    { id: "cat_contas", name: "Contas & Perfis", icon: "fa-solid fa-user-shield" },
+    { id: "cat_moedas", name: "Moedas & Gold", icon: "fa-solid fa-coins" },
+    { id: "cat_itens", name: "Itens & Godlys", icon: "fa-solid fa-wand-magic-sparkles" },
+    { id: "cat_servicos", name: "Serviços & Nitro", icon: "fa-brands fa-discord" },
+    { id: "cat_geral", name: "Outros / Diversos", icon: "fa-solid fa-box" }
+  ],
+  coupons: [
+    { id: "cupom_1", code: "BLOOD10", discountPercent: 10, maxUses: 100, usedCount: 3, active: true },
+    { id: "cupom_2", code: "GGMAX20", discountPercent: 20, maxUses: 50, usedCount: 12, active: true },
+    { id: "cupom_3", code: "VIP30", discountPercent: 30, maxUses: 10, usedCount: 10, active: false }
+  ],
+  visitsCount: 1482,
   currentUser: null,
   orders: [],
   products: [
@@ -44,6 +57,7 @@ const DEFAULT_STATE = {
       id: "p1",
       slug: "robux (r0b6x)",
       name: "Robux (r0b6x)",
+      category: "Moedas & Gold",
       priceText: "R$ 29,90",
       priceValue: 29.90,
       image: "/fotos e videos/robux.png",
@@ -60,6 +74,7 @@ const DEFAULT_STATE = {
       id: "p2",
       slug: "conta-18v (c0nta-18v)",
       name: "Conta 18v (c0nta-18v)",
+      category: "Contas & Perfis",
       priceText: "R$ 49,90",
       priceValue: 49.90,
       image: "/fotos e videos/conta18v.png",
@@ -76,6 +91,7 @@ const DEFAULT_STATE = {
       id: "p3",
       slug: "j0g0s-st34m",
       name: "Jogos Steam (j0g0s-st34m)",
+      category: "Serviços & Nitro",
       priceText: "R$ 34,90",
       priceValue: 34.90,
       image: "/fotos e videos/steam.png",
@@ -92,6 +108,7 @@ const DEFAULT_STATE = {
       id: "p4",
       slug: "murd3r-myst3ry",
       name: "Murder Mystery 2 (murd3r-myst3ry)",
+      category: "Itens & Godlys",
       priceText: "R$ 19,90",
       priceValue: 19.90,
       image: "/fotos e videos/murder.png",
@@ -108,6 +125,7 @@ const DEFAULT_STATE = {
       id: "p5",
       slug: "bloxfru1ts-g0d-human",
       name: "Blox Fruits - God Human + Cursed Dual Katana",
+      category: "Contas & Perfis",
       priceText: "R$ 39,90",
       priceValue: 39.90,
       image: "/fotos e videos/blox.png",
@@ -124,6 +142,7 @@ const DEFAULT_STATE = {
       id: "p6",
       slug: "d1sc0rd-n1tr0",
       name: "Discord Nitro Gaming (3 Meses + 2 Boosts)",
+      category: "Serviços & Nitro",
       priceText: "R$ 14,90",
       priceValue: 14.90,
       image: "/fotos e videos/discord.png",
@@ -224,6 +243,21 @@ export const StoreProvider = ({ children }) => {
   const storeStateRef = useRef(storeState);
   storeStateRef.current = storeState;
 
+  useEffect(() => {
+    if (!sessionStorage.getItem('bloodstore_visited')) {
+      sessionStorage.setItem('bloodstore_visited', 'true');
+      const timer = setTimeout(() => {
+        markLocalUpdate();
+        setStoreState(prev => {
+          const next = { ...prev, visitsCount: (prev.visitsCount || DEFAULT_STATE.visitsCount) + 1 };
+          storeStateRef.current = next;
+          return next;
+        });
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   const isLocalChangeRef = useRef(false);
   const lastLocalUpdateRef = useRef(0);
 
@@ -275,11 +309,29 @@ export const StoreProvider = ({ children }) => {
         const mergedOrders = Array.isArray(data.orders) ? data.orders : (prev.orders || []);
         const mergedProducts = Array.isArray(data.products) && data.products.length > 0 ? data.products : prev.products;
         const mergedTerms = Array.isArray(data.terms) && data.terms.length > 0 ? data.terms : prev.terms;
+        const mergedCategories = Array.isArray(data.categories) && data.categories.length > 0
+          ? data.categories
+          : (Array.isArray(data.config?.categories) && data.config.categories.length > 0
+            ? data.config.categories
+            : (prev.categories || DEFAULT_STATE.categories));
+        const mergedCoupons = Array.isArray(data.coupons) && data.coupons.length > 0
+          ? data.coupons
+          : (Array.isArray(data.config?.coupons) && data.config.coupons.length > 0
+            ? data.config.coupons
+            : (prev.coupons || DEFAULT_STATE.coupons));
+        const mergedVisits = typeof data.visitsCount === 'number'
+          ? data.visitsCount
+          : (typeof data.config?.visitsCount === 'number'
+            ? data.config.visitsCount
+            : (prev.visitsCount || DEFAULT_STATE.visitsCount));
 
         const cloudState = {
           ...prev,
           config: mergedConfig,
           products: mergedProducts,
+          categories: mergedCategories,
+          coupons: mergedCoupons,
+          visitsCount: mergedVisits,
           terms: mergedTerms,
           orders: mergedOrders,
           staffUsers: mergedStaff
@@ -424,11 +476,19 @@ export const StoreProvider = ({ children }) => {
       try {
         const payload = {
           id: 'global_state',
-          config: storeState.config || DEFAULT_STATE.config,
+          config: { 
+            ...(storeState.config || DEFAULT_STATE.config), 
+            categories: storeState.categories || DEFAULT_STATE.categories,
+            coupons: storeState.coupons || DEFAULT_STATE.coupons,
+            visitsCount: storeState.visitsCount || DEFAULT_STATE.visitsCount
+          },
           products: storeState.products || [],
           terms: storeState.terms || [],
           orders: storeState.orders || [],
           staff_users: storeState.staffUsers || [],
+          categories: storeState.categories || DEFAULT_STATE.categories,
+          coupons: storeState.coupons || DEFAULT_STATE.coupons,
+          visitsCount: storeState.visitsCount || DEFAULT_STATE.visitsCount,
           updated_at: new Date().toISOString()
         };
         const { error } = await supabase.from('store_state').upsert(payload);
@@ -455,11 +515,19 @@ export const StoreProvider = ({ children }) => {
     try {
       const payload = {
         id: 'global_state',
-        config: targetState.config || DEFAULT_STATE.config,
+        config: { 
+          ...(targetState.config || DEFAULT_STATE.config), 
+          categories: targetState.categories || DEFAULT_STATE.categories,
+          coupons: targetState.coupons || DEFAULT_STATE.coupons,
+          visitsCount: targetState.visitsCount || DEFAULT_STATE.visitsCount
+        },
         products: targetState.products || [],
         terms: targetState.terms || [],
         orders: targetState.orders || [],
         staff_users: targetState.staffUsers || [],
+        categories: targetState.categories || DEFAULT_STATE.categories,
+        coupons: targetState.coupons || DEFAULT_STATE.coupons,
+        visitsCount: targetState.visitsCount || DEFAULT_STATE.visitsCount,
         updated_at: new Date().toISOString()
       };
       const { data, error } = await supabase.from('store_state').upsert(payload).select();
@@ -627,6 +695,140 @@ export const StoreProvider = ({ children }) => {
     });
     forceSyncToCloud(nextState);
     notifyDiscordLogs("Produto Excluído", `O produto "${target?.name || id}" foi excluído permanentemente do catálogo.`, staffName);
+  };
+
+  // Funções CRUD de Categorias
+  const addCategory = (newCat, staffName = "Admin / Staff") => {
+    const id = "cat_" + Date.now();
+    const cleanCat = {
+      ...newCat,
+      name: sanitizeString(newCat.name || '', 100),
+      icon: sanitizeString(newCat.icon || 'fa-solid fa-tag', 100)
+    };
+    markLocalUpdate();
+    let nextState;
+    setStoreState(prev => {
+      nextState = {
+        ...prev,
+        categories: [...(prev.categories || DEFAULT_STATE.categories), { ...cleanCat, id }]
+      };
+      storeStateRef.current = nextState;
+      return nextState;
+    });
+    forceSyncToCloud(nextState);
+    notifyDiscordLogs("Nova Categoria Cadastrada", `Categoria criada: "${cleanCat.name}" por @${staffName}.`, staffName);
+  };
+
+  const updateCategory = (id, updatedFields, staffName = "Admin / Staff") => {
+    const cleanFields = { ...updatedFields };
+    if (cleanFields.name) cleanFields.name = sanitizeString(cleanFields.name, 100);
+    if (cleanFields.icon) cleanFields.icon = sanitizeString(cleanFields.icon, 100);
+
+    markLocalUpdate();
+    let nextState;
+    setStoreState(prev => {
+      nextState = {
+        ...prev,
+        categories: (prev.categories || DEFAULT_STATE.categories).map(c => c.id === id || c.name === id ? { ...c, ...cleanFields } : c)
+      };
+      storeStateRef.current = nextState;
+      return nextState;
+    });
+    forceSyncToCloud(nextState);
+    notifyDiscordLogs("Categoria Atualizada", `A categoria "${cleanFields.name || id}" foi atualizada por @${staffName}.`, staffName);
+  };
+
+  const deleteCategory = (idOrName, staffName = "Admin / Staff") => {
+    const target = (storeStateRef.current.categories || DEFAULT_STATE.categories).find(c => c.id === idOrName || c.name === idOrName);
+    markLocalUpdate();
+    let nextState;
+    setStoreState(prev => {
+      nextState = {
+        ...prev,
+        categories: (prev.categories || DEFAULT_STATE.categories).filter(c => c.id !== idOrName && c.name !== idOrName)
+      };
+      storeStateRef.current = nextState;
+      return nextState;
+    });
+    forceSyncToCloud(nextState);
+    notifyDiscordLogs("Categoria Excluída", `A categoria "${target?.name || idOrName}" foi excluída permanentemente por @${staffName}.`, staffName);
+  };
+
+  // Funções CRUD de Cupons de Desconto
+  const addCoupon = (newCupom, staffName = "Admin / Staff") => {
+    const id = "cupom_" + Date.now();
+    const clean = {
+      ...newCupom,
+      code: sanitizeString((newCupom.code || '').toUpperCase().replace(/\s+/g, ''), 30),
+      discountPercent: Math.min(100, Math.max(1, Number(newCupom.discountPercent) || 10)),
+      maxUses: Math.max(1, Number(newCupom.maxUses) || 50),
+      usedCount: Number(newCupom.usedCount) || 0,
+      active: newCupom.active !== false
+    };
+    markLocalUpdate();
+    let nextState;
+    setStoreState(prev => {
+      nextState = { ...prev, coupons: [...(prev.coupons || DEFAULT_STATE.coupons), { ...clean, id }] };
+      storeStateRef.current = nextState;
+      return nextState;
+    });
+    forceSyncToCloud(nextState);
+    notifyDiscordLogs("Novo Cupom de Desconto", `Cupom **${clean.code}** (-${clean.discountPercent}%) cadastrado no sistema por @${staffName}.`, staffName);
+  };
+
+  const updateCoupon = (id, fields, staffName = "Admin / Staff") => {
+    const clean = { ...fields };
+    if (clean.code) clean.code = sanitizeString(clean.code.toUpperCase().replace(/\s+/g, ''), 30);
+    if (clean.discountPercent) clean.discountPercent = Math.min(100, Math.max(1, Number(clean.discountPercent)));
+    markLocalUpdate();
+    let nextState;
+    setStoreState(prev => {
+      nextState = {
+        ...prev,
+        coupons: (prev.coupons || DEFAULT_STATE.coupons).map(c => c.id === id || c.code === id ? { ...c, ...clean } : c)
+      };
+      storeStateRef.current = nextState;
+      return nextState;
+    });
+    forceSyncToCloud(nextState);
+  };
+
+  const deleteCoupon = (id, staffName = "Admin / Staff") => {
+    const target = (storeStateRef.current.coupons || DEFAULT_STATE.coupons).find(c => c.id === id || c.code === id);
+    markLocalUpdate();
+    let nextState;
+    setStoreState(prev => {
+      nextState = { ...prev, coupons: (prev.coupons || DEFAULT_STATE.coupons).filter(c => c.id !== id && c.code !== id) };
+      storeStateRef.current = nextState;
+      return nextState;
+    });
+    forceSyncToCloud(nextState);
+    notifyDiscordLogs("Cupom Excluído", `O cupom **${target?.code || id}** foi removido por @${staffName}.`, staffName);
+  };
+
+  // Atualização de Status Online e Turno do Staff
+  const updateStaffStatus = (staffId, status, turnNote = "") => {
+    markLocalUpdate();
+    let nextState;
+    setStoreState(prev => {
+      nextState = {
+        ...prev,
+        staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).map(u => {
+          if (u.id === staffId || u.username === staffId) {
+            return {
+              ...u,
+              onlineStatus: status, // 'online', 'busy', 'offline'
+              turnNote: turnNote,
+              lastActive: Date.now()
+            };
+          }
+          return u;
+        })
+       };
+       storeStateRef.current = nextState;
+       return nextState;
+    });
+    forceSyncToCloud(nextState);
   };
 
   // Funções CRUD de Termos
@@ -872,7 +1074,7 @@ export const StoreProvider = ({ children }) => {
   };
 
   // --- Pedidos & Chat ao Vivo Estilo GGMAX com Blindagem Anti-Hacking ---
-  const createOrder = ({ product, discordUser, pixCode, qrCodeUrl, contactMethod, contactValue }) => {
+  const createOrder = ({ product, discordUser, pixCode, qrCodeUrl, contactMethod, contactValue, appliedCoupon = null }) => {
     // Validação de Rate Limiting (Anti-Spam)
     const rateCheck = canSubmitOrder();
     if (!rateCheck.allowed) {
@@ -896,6 +1098,17 @@ export const StoreProvider = ({ children }) => {
     const activePixCode = pixCode || product?.pixKey || storeState.config.pixKey;
     const activeQrCode = qrCodeUrl || product?.qrCodeUrl || storeState.config.qrCodeUrl || "/fotos e videos/qrcode.png";
 
+    // Registrar e incrementar uso do cupom se aplicável
+    if (appliedCoupon && appliedCoupon.code) {
+      const targetCoupon = (storeStateRef.current.coupons || []).find(c => c.code === appliedCoupon.code.toUpperCase());
+      if (targetCoupon) {
+        setStoreState(prev => ({
+          ...prev,
+          coupons: (prev.coupons || []).map(c => c.code === appliedCoupon.code.toUpperCase() ? { ...c, usedCount: (c.usedCount || 0) + 1 } : c)
+        }));
+      }
+    }
+
     const newOrder = {
       id: orderId,
       orderNumber,
@@ -904,6 +1117,7 @@ export const StoreProvider = ({ children }) => {
       buyer: { ...discordUser },
       contactMethod: cleanContactMethod,
       contactValue: cleanContactValue,
+      appliedCoupon: appliedCoupon ? { ...appliedCoupon } : null,
       pixCode: activePixCode,
       qrCodeUrl: activeQrCode,
       status: "aguardando_comprovante",
@@ -915,7 +1129,7 @@ export const StoreProvider = ({ children }) => {
           id: "msg_init_" + Date.now(),
           sender: "Sistema Blood Store",
           type: "system",
-          text: `🎯 Pedido ${orderNumber} criado para **${product.name}** (${product.priceText}).\n📬 **Meio de Contato/Entrega Solicitado:** ${cleanContactMethod} (${cleanContactValue})\n\n⚡ **Como liberar seu produto agora:**\n1. Faça o pagamento do PIX Copia e Cola.\n2. Clique no botão "Subir Comprovante PIX" ou envie a foto no chat abaixo.\n3. Nosso Administrador verificará e entregará seu item diretamente aqui no chat ou pelo meio escolhido!`,
+          text: `🎯 Pedido ${orderNumber} criado para **${product.name}** (${product.priceText}).${appliedCoupon ? `\n🎟️ **Cupom Aplicado:** ${appliedCoupon.code} (-${appliedCoupon.discountPercent}% = ${appliedCoupon.discountedPriceText})` : ''}\n📬 **Meio de Contato/Entrega Solicitado:** ${cleanContactMethod} (${cleanContactValue})\n\n⚡ **Como liberar seu produto agora:**\n1. Faça o pagamento do PIX Copia e Cola.\n2. Clique no botão "Subir Comprovante PIX" ou envie a foto no chat abaixo.\n3. Nosso Administrador verificará e entregará seu item diretamente aqui no chat ou pelo meio escolhido!`,
           timestamp: nowStr
         }
       ]
@@ -1161,6 +1375,9 @@ export const StoreProvider = ({ children }) => {
       storeState,
       config: storeState.config,
       products: storeState.products,
+      categories: storeState.categories || DEFAULT_STATE.categories,
+      coupons: storeState.coupons || DEFAULT_STATE.coupons,
+      visitsCount: storeState.visitsCount || DEFAULT_STATE.visitsCount,
       terms: storeState.terms,
       staffUsers: storeState.staffUsers || DEFAULT_STATE.staffUsers,
       currentUser: storeState.currentUser,
@@ -1170,10 +1387,17 @@ export const StoreProvider = ({ children }) => {
       updateStaffUser,
       deleteStaffUser,
       updateAllStaffUsers,
+      updateStaffStatus,
       forceSyncToCloud,
       addProduct,
       updateProduct,
       deleteProduct,
+      addCategory,
+      updateCategory,
+      deleteCategory,
+      addCoupon,
+      updateCoupon,
+      deleteCoupon,
       updateTerms,
       resetToDefaults,
       loginWithDiscord,

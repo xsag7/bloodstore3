@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 
 export const CheckoutPage = ({ onBackToStore }) => {
-  const { config, products, currentUser, createOrder } = useStore();
+  const { config, products, coupons, currentUser, createOrder } = useStore();
   const [product, setProduct] = useState(null);
   const [contactMethod, setContactMethod] = useState('💬 Chat ao Vivo no Site (Aqui no Pedido)');
   const [contactValue, setContactValue] = useState(currentUser?.username || localStorage.getItem('bloodstore_client_name') || '');
   const [customerNote, setCustomerNote] = useState('');
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderId, setOrderId] = useState('');
@@ -61,6 +64,34 @@ export const CheckoutPage = ({ onBackToStore }) => {
   const activePixKey = product.pixKey || config.pixKey;
   const activeQrCodeUrl = product.qrCodeUrl || config.qrCodeUrl || "/fotos e videos/qrcode.png";
 
+  const handleApplyCoupon = (e) => {
+    e && e.preventDefault();
+    setCouponError('');
+    if (!couponCodeInput.trim()) return;
+    const clean = couponCodeInput.trim().toUpperCase();
+    const found = (coupons || []).find(c => c.code === clean && c.active);
+    if (!found) {
+      setCouponError('❌ Cupom inválido ou inativo.');
+      setAppliedCoupon(null);
+      return;
+    }
+    if ((found.usedCount || 0) >= (found.maxUses || 50)) {
+      setCouponError('❌ Este cupom já atingiu o limite máximo de usos.');
+      setAppliedCoupon(null);
+      return;
+    }
+    const rawNumStr = (product.priceText || '').replace(/[^\d.,]/g, '').replace(',', '.');
+    const originalPrice = Number(rawNumStr) || 0;
+    const discountAmount = (originalPrice * found.discountPercent) / 100;
+    const finalPrice = Math.max(0, originalPrice - discountAmount);
+    const discountedPriceText = finalPrice > 0 ? `R$ ${finalPrice.toFixed(2).replace('.', ',')}` : 'Grátis';
+
+    setAppliedCoupon({
+      ...found,
+      discountedPriceText
+    });
+  };
+
   const handleOrderSubmit = async (e) => {
     e.preventDefault();
     if (!contactValue.trim()) return;
@@ -76,12 +107,13 @@ export const CheckoutPage = ({ onBackToStore }) => {
     localStorage.setItem('bloodstore_client_name', contactValue.trim());
 
     const newOrder = createOrder({
-      product,
+      product: appliedCoupon ? { ...product, priceText: appliedCoupon.discountedPriceText, originalPriceText: product.priceText } : product,
       discordUser: buyerObj,
       pixCode: activePixKey,
       qrCodeUrl: activeQrCodeUrl,
       contactMethod,
-      contactValue: contactValue.trim()
+      contactValue: contactValue.trim(),
+      appliedCoupon
     });
 
     try {
@@ -198,7 +230,16 @@ export const CheckoutPage = ({ onBackToStore }) => {
                 </div>
 
                 <h2 className="sidebar-product-title">{product.name}</h2>
-                <div className="sidebar-product-price">{product.priceText}</div>
+                <div className="sidebar-product-price">
+                  {appliedCoupon ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ textDecoration: 'line-through', color: '#78788c', fontSize: '0.95rem' }}>{product.priceText}</span>
+                      <span style={{ color: '#22c55e', fontWeight: '800' }}>{appliedCoupon.discountedPriceText}</span>
+                    </div>
+                  ) : (
+                    product.priceText
+                  )}
+                </div>
 
                 <div className="sidebar-highlights-section">
                   <h4>Vantagens e Garantias inclusas:</h4>
@@ -291,6 +332,46 @@ export const CheckoutPage = ({ onBackToStore }) => {
                       value={customerNote}
                       onChange={(e) => setCustomerNote(e.target.value)}
                     />
+                  </div>
+
+                  <div className="form-group" style={{ background: '#181822', padding: '14px', borderRadius: '8px', border: '1px solid #2a0c0c', marginTop: '6px' }}>
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fff', marginBottom: '8px' }}>
+                      <i className="fa-solid fa-ticket text-red"></i> Tem um Cupom de Desconto?
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input 
+                        type="text" 
+                        className="form-input"
+                        placeholder="Digite o código promocional..."
+                        value={couponCodeInput}
+                        onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                        disabled={!!appliedCoupon}
+                        style={{ flex: 1, background: '#111116' }}
+                      />
+                      {appliedCoupon ? (
+                        <button 
+                          type="button" 
+                          onClick={() => { setAppliedCoupon(null); setCouponCodeInput(''); }} 
+                          style={{ background: '#cc0000', color: '#fff', border: 'none', padding: '0 16px', borderRadius: '6px', fontWeight: '700', cursor: 'pointer' }}
+                        >
+                          Remover
+                        </button>
+                      ) : (
+                        <button 
+                          type="button" 
+                          onClick={handleApplyCoupon} 
+                          style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '0 18px', borderRadius: '6px', fontWeight: '700', cursor: 'pointer' }}
+                        >
+                          Aplicar
+                        </button>
+                      )}
+                    </div>
+                    {couponError && <div style={{ color: '#ff6b6b', fontSize: '0.82rem', marginTop: '6px' }}>{couponError}</div>}
+                    {appliedCoupon && (
+                      <div style={{ color: '#22c55e', fontSize: '0.85rem', marginTop: '6px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <i className="fa-solid fa-check-circle"></i> Cupom <strong>{appliedCoupon.code}</strong> aplicado (-{appliedCoupon.discountPercent}%)! Novo valor: {appliedCoupon.discountedPriceText}
+                      </div>
+                    )}
                   </div>
 
                   <hr className="checkout-sep" />
