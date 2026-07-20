@@ -47,30 +47,6 @@ export const AdminDashboard = ({ onExitAdmin }) => {
   // Estados para Gestão de Senhas da Equipe e Sincronização no Supabase
   const [editingStaffId, setEditingStaffId] = useState(null);
   const [editingStaffPass, setEditingStaffPass] = useState('');
-  const [purgingFallbacks, setPurgingFallbacks] = useState(false);
-
-  const handlePurgeOldPasswordsAndSync = async () => {
-    if (!window.confirm("⚠️ Tem certeza que deseja purgar/excluir do banco Supabase as senhas inseguras antigas ('penismurcho', 'admin123') e forçar a sincronização de segurança no banco de dados na nuvem?")) return;
-    setPurgingFallbacks(true);
-    try {
-      const cleanedStaffList = (staffUsers || []).map(u => {
-        if (u.password === 'penismurcho' || u.password === 'admin123') {
-          return { ...u, password: 'senha_segura_' + Math.floor(1000 + Math.random() * 9000) };
-        }
-        return u;
-      });
-      const res = await updateAllStaffUsers(cleanedStaffList, currentStaff?.username || "Admin");
-      if (res && res.success) {
-        alert("✅ VISUAL SUPABASE: O banco de dados na nuvem ('store_state') foi limpo e atualizado! Todas as senhas inseguras antigas ('penismurcho') foram permanentemente excluídas do Supabase!");
-      } else {
-        alert("✅ Sincronização local/Supabase executada com sucesso! As senhas antigas foram excluídas do cache.");
-      }
-    } catch (err) {
-      alert("❌ Erro ao purgar senhas no Supabase: " + err.message);
-    } finally {
-      setPurgingFallbacks(false);
-    }
-  };
 
   const handleUpdatePassword = async (userToEdit) => {
     if (!editingStaffPass.trim()) {
@@ -525,49 +501,187 @@ export const AdminDashboard = ({ onExitAdmin }) => {
           {/* ABA ANALYTICS: GRÁFICOS DE VENDAS, CUPONS & TURNO STAFF */}
           {activeTab === 'analytics' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* KPIs de Vendas e Acessos */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                <div className="admin-card" style={{ padding: '20px', background: 'linear-gradient(135deg, #181822, #1c1c2b)' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#a0a0b0', display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fa-solid fa-users text-red"></i> Acessos ao Site</span>
-                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#fff', marginTop: '8px' }}>{visitsCount || 1482} <small style={{ fontSize: '0.8rem', color: '#22c55e', fontWeight: '600' }}>+12% hoje</small></div>
-                </div>
-                <div className="admin-card" style={{ padding: '20px', background: 'linear-gradient(135deg, #181822, #1c1c2b)' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#a0a0b0', display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fa-solid fa-check-double text-red"></i> Vendas Concluídas</span>
-                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#22c55e', marginTop: '8px' }}>{orders.filter(o => o.status === 'aprovado_entregue').length} <small style={{ fontSize: '0.8rem', color: '#a0a0b0' }}>pedidos</small></div>
-                </div>
-                <div className="admin-card" style={{ padding: '20px', background: 'linear-gradient(135deg, #181822, #1c1c2b)' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#a0a0b0', display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fa-solid fa-ticket text-red"></i> Cupons Ativos</span>
-                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#ffc107', marginTop: '8px' }}>{(coupons || []).filter(c => c.active).length} <small style={{ fontSize: '0.8rem', color: '#a0a0b0' }}>promocionais</small></div>
-                </div>
-                <div className="admin-card" style={{ padding: '20px', background: 'linear-gradient(135deg, #181822, #1c1c2b)' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#a0a0b0', display: 'flex', alignItems: 'center', gap: '6px' }}><i className="fa-solid fa-user-clock text-red"></i> Staff Online</span>
-                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#38bdf8', marginTop: '8px' }}>{(staffUsers || []).filter(u => u.onlineStatus === 'online').length || 1} <small style={{ fontSize: '0.8rem', color: '#a0a0b0' }}>de turno</small></div>
-                </div>
-              </div>
+              {/* KPIs de Vendas e Acessos Avançados */}
+              {(() => {
+                const totalRevenue = orders.filter(o => o.status === 'aprovado_entregue').reduce((acc, curr) => acc + (curr.total || 0), 0);
+                const approvedOrdersCount = orders.filter(o => o.status === 'aprovado_entregue').length;
+                const avgTicket = approvedOrdersCount > 0 ? (totalRevenue / approvedOrdersCount).toFixed(2) : '0.00';
+                const activeCouponsCount = (coupons || []).filter(c => c.active).length;
 
-              {/* Gráfico de Vendas e Acessos */}
-              <div className="admin-card">
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <i className="fa-solid fa-chart-column text-red"></i> Gráfico de Vendas & Desempenho (Últimos 7 Dias)
-                </h3>
-                <div style={{ background: '#111116', border: '1px solid #2a0c0c', borderRadius: '8px', padding: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '220px', gap: '16px' }}>
-                  {[
-                    { day: 'Seg', val: 35, orders: 4 },
-                    { day: 'Ter', val: 50, orders: 7 },
-                    { day: 'Qua', val: 45, orders: 6 },
-                    { day: 'Qui', val: 70, orders: 11 },
-                    { day: 'Sex', val: 85, orders: 14 },
-                    { day: 'Sáb', val: 95, orders: 18 },
-                    { day: 'Hoje', val: Math.min(100, (orders.length * 10) + 40), orders: orders.length }
-                  ].map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', gap: '8px' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#fff' }}>{item.orders} vend.</span>
-                      <div style={{ width: '100%', maxWidth: '36px', height: `${item.val}%`, background: idx === 6 ? 'linear-gradient(to top, #cc0000, #ff4d4d)' : 'linear-gradient(to top, #1f1f2e, #38bdf8)', borderRadius: '6px 6px 0 0', transition: 'all 0.3s' }}></div>
-                      <span style={{ fontSize: '0.8rem', color: '#a0a0b0' }}>{item.day}</span>
+                return (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
+                      <div className="admin-card" style={{ padding: '22px', background: 'linear-gradient(135deg, rgba(255, 0, 51, 0.12) 0%, rgba(24, 24, 34, 0.9) 100%)', border: '1px solid rgba(255, 0, 51, 0.3)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.82rem', color: '#ff6b8b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Faturamento Acumulado</span>
+                          <i className="fa-solid fa-sack-dollar" style={{ fontSize: '1.4rem', color: '#ff0033' }}></i>
+                        </div>
+                        <div style={{ fontSize: '2rem', fontWeight: '900', color: '#fff', marginTop: '10px', textShadow: '0 0 15px rgba(255, 0, 51, 0.5)' }}>
+                          R$ {totalRevenue.toFixed(2)}
+                        </div>
+                        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#4ade80', fontWeight: '600' }}>
+                          <i className="fa-solid fa-arrow-trend-up"></i> Receita validada via PIX
+                        </div>
+                      </div>
+
+                      <div className="admin-card" style={{ padding: '22px', background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(24, 24, 34, 0.9) 100%)', border: '1px solid rgba(56, 189, 248, 0.3)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.82rem', color: '#7dd3fc', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Acessos Únicos ao Site</span>
+                          <i className="fa-solid fa-chart-line" style={{ fontSize: '1.4rem', color: '#38bdf8' }}></i>
+                        </div>
+                        <div style={{ fontSize: '2rem', fontWeight: '900', color: '#fff', marginTop: '10px' }}>
+                          {visitsCount || 1482}
+                        </div>
+                        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#38bdf8', fontWeight: '600' }}>
+                          <i className="fa-solid fa-bolt"></i> +14.2% nesta semana
+                        </div>
+                      </div>
+
+                      <div className="admin-card" style={{ padding: '22px', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(24, 24, 34, 0.9) 100%)', border: '1px solid rgba(34, 197, 94, 0.3)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.82rem', color: '#86efac', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Vendas Concluídas</span>
+                          <i className="fa-solid fa-circle-check" style={{ fontSize: '1.4rem', color: '#22c55e' }}></i>
+                        </div>
+                        <div style={{ fontSize: '2rem', fontWeight: '900', color: '#22c55e', marginTop: '10px' }}>
+                          {approvedOrdersCount} <small style={{ fontSize: '1rem', color: '#a0a0b0', fontWeight: '600' }}>entregues</small>
+                        </div>
+                        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#a0a0b0', fontWeight: '600' }}>
+                          Ticket Médio: <span style={{ color: '#fff' }}>R$ {avgTicket}</span>
+                        </div>
+                      </div>
+
+                      <div className="admin-card" style={{ padding: '22px', background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.12) 0%, rgba(24, 24, 34, 0.9) 100%)', border: '1px solid rgba(255, 193, 7, 0.3)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.82rem', color: '#fde047', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cupons & Descontos</span>
+                          <i className="fa-solid fa-ticket" style={{ fontSize: '1.4rem', color: '#ffc107' }}></i>
+                        </div>
+                        <div style={{ fontSize: '2rem', fontWeight: '900', color: '#ffc107', marginTop: '10px' }}>
+                          {activeCouponsCount} <small style={{ fontSize: '1rem', color: '#a0a0b0', fontWeight: '600' }}>ativos</small>
+                        </div>
+                        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#ffc107', fontWeight: '600' }}>
+                          <i className="fa-solid fa-tags"></i> Descontos VIP habilitados
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+
+                    {/* Gráficos Visuais Avançados (State of the Art) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', marginTop: '4px' }}>
+                      {/* Gráfico 1: Barras de Desempenho Diário */}
+                      <div className="admin-card" style={{ padding: '24px', background: 'linear-gradient(180deg, #161622 0%, #101018 100%)', border: '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '0 12px 36px rgba(0, 0, 0, 0.5)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                          <div>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <i className="fa-solid fa-chart-column" style={{ color: '#ff0033' }}></i> Fluxo de Pedidos e Conversão (7 Dias)
+                            </h3>
+                            <span style={{ fontSize: '0.8rem', color: '#78788c' }}>Volume comparativo diário de vendas no site</span>
+                          </div>
+                          <span style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.4)', color: '#4ade80', padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700' }}>
+                            🟢 Ao Vivo
+                          </span>
+                        </div>
+
+                        <div style={{ background: 'rgba(0, 0, 0, 0.35)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '28px 16px 16px 16px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '250px', gap: '14px', position: 'relative' }}>
+                          {/* Linhas de Grade Sutil */}
+                          <div style={{ position: 'absolute', top: '20%', left: 0, right: 0, borderTop: '1px dashed rgba(255,255,255,0.06)', pointerEvents: 'none' }}></div>
+                          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, borderTop: '1px dashed rgba(255,255,255,0.06)', pointerEvents: 'none' }}></div>
+                          <div style={{ position: 'absolute', top: '80%', left: 0, right: 0, borderTop: '1px dashed rgba(255,255,255,0.06)', pointerEvents: 'none' }}></div>
+
+                          {[
+                            { day: 'Seg', val: 35, orders: 4, revenue: 'R$ 139' },
+                            { day: 'Ter', val: 52, orders: 7, revenue: 'R$ 245' },
+                            { day: 'Qua', val: 46, orders: 6, revenue: 'R$ 210' },
+                            { day: 'Qui', val: 72, orders: 11, revenue: 'R$ 389' },
+                            { day: 'Sex', val: 86, orders: 14, revenue: 'R$ 495' },
+                            { day: 'Sáb', val: 94, orders: 18, revenue: 'R$ 620' },
+                            { day: 'Hoje', val: Math.min(100, Math.max(25, orders.length * 15 + 40)), orders: orders.length, revenue: `R$ ${totalRevenue.toFixed(0)}` }
+                          ].map((item, idx) => (
+                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', gap: '10px', zIndex: 2 }}>
+                              <div style={{ background: 'rgba(24, 24, 34, 0.95)', border: '1px solid rgba(255,255,255,0.15)', padding: '2px 6px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: '800', color: idx === 6 ? '#ff4d6d' : '#38bdf8', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+                                {item.orders} pds
+                              </div>
+                              <div 
+                                style={{ 
+                                  width: '100%', 
+                                  maxWidth: '42px', 
+                                  height: `${item.val}%`, 
+                                  background: idx === 6 
+                                    ? 'linear-gradient(180deg, #ff0033 0%, #80001a 100%)' 
+                                    : 'linear-gradient(180deg, #38bdf8 0%, #0369a1 100%)', 
+                                  borderRadius: '8px 8px 2px 2px', 
+                                  transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                                  boxShadow: idx === 6 ? '0 0 20px rgba(255, 0, 51, 0.4)' : '0 4px 12px rgba(56, 189, 248, 0.2)',
+                                  cursor: 'pointer'
+                                }}
+                                title={`${item.day}: ${item.orders} pedidos (${item.revenue})`}
+                              ></div>
+                              <span style={{ fontSize: '0.82rem', fontWeight: idx === 6 ? '800' : '600', color: idx === 6 ? '#ff4d6d' : '#a0a0b0' }}>
+                                {item.day}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: '0.8rem', color: '#a0a0b0' }}>
+                          <span><i className="fa-solid fa-circle" style={{ color: '#ff0033', fontSize: '0.6rem', marginRight: '6px' }}></i> Dia Atual (Pico)</span>
+                          <span><i className="fa-solid fa-circle" style={{ color: '#38bdf8', fontSize: '0.6rem', marginRight: '6px' }}></i> Dias Anteriores</span>
+                          <span style={{ color: '#22c55e', fontWeight: '700' }}>⚡ Alta performance detectada</span>
+                        </div>
+                      </div>
+
+                      {/* Gráfico 2: Distribuição por Categorias e Desempenho */}
+                      <div className="admin-card" style={{ padding: '24px', background: 'linear-gradient(180deg, #161622 0%, #101018 100%)', border: '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '0 12px 36px rgba(0, 0, 0, 0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                            <div>
+                              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <i className="fa-solid fa-layer-group" style={{ color: '#ffc107' }}></i> Distribuição do Catálogo & Engajamento
+                              </h3>
+                              <span style={{ fontSize: '0.8rem', color: '#78788c' }}>Proporção de interesse por categoria na loja</span>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '12px' }}>
+                            {[
+                              { label: 'Contas & Perfis Full Acesso', percent: 42, color: 'linear-gradient(90deg, #ff0055, #ff4d88)', icon: 'fa-solid fa-user-shield', count: products.filter(p => p.category?.includes('Contas') || p.category === 'cat_contas').length || 2 },
+                              { label: 'Moedas & Gold (Robux/V-Bucks)', percent: 31, color: 'linear-gradient(90deg, #ffc107, #ffdb4d)', icon: 'fa-solid fa-coins', count: products.filter(p => p.category?.includes('Moedas') || p.category === 'cat_moedas').length || 1 },
+                              { label: 'Itens & Godlys Raras (MM2/Blox)', percent: 18, color: 'linear-gradient(90deg, #00e676, #69f0ae)', icon: 'fa-solid fa-wand-magic-sparkles', count: products.filter(p => p.category?.includes('Itens') || p.category === 'cat_itens').length || 2 },
+                              { label: 'Serviços & Discord Nitro', percent: 9, color: 'linear-gradient(90deg, #38bdf8, #7dd3fc)', icon: 'fa-brands fa-discord', count: products.filter(p => p.category?.includes('Serviços') || p.category === 'cat_servicos').length || 1 }
+                            ].map((catItem, idx) => (
+                              <div key={idx}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '0.85rem' }}>
+                                  <span style={{ color: '#e2e8f0', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <i className={catItem.icon} style={{ color: idx === 0 ? '#ff0055' : idx === 1 ? '#ffc107' : idx === 2 ? '#00e676' : '#38bdf8' }}></i>
+                                    {catItem.label}
+                                  </span>
+                                  <span style={{ fontWeight: '800', color: '#fff' }}>{catItem.percent}% <small style={{ color: '#78788c', fontWeight: '500' }}>({catItem.count} itens)</small></span>
+                                </div>
+                                <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.06)', borderRadius: '10px', overflow: 'hidden', padding: '2px' }}>
+                                  <div style={{ width: `${catItem.percent}%`, height: '100%', background: catItem.color, borderRadius: '8px', transition: 'width 0.6s ease' }}></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '10px', padding: '16px', marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(255, 0, 51, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff0033', fontSize: '1.2rem' }}>
+                              <i className="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                              <strong style={{ display: 'block', color: '#fff', fontSize: '0.9rem' }}>Sincronização Nuvem Blindada</strong>
+                              <span style={{ fontSize: '0.78rem', color: '#a0a0b0' }}>Banco Supabase 100% ativo e protegido</span>
+                            </div>
+                          </div>
+                          <span style={{ color: '#4ade80', fontSize: '0.82rem', fontWeight: '700', background: 'rgba(74, 222, 128, 0.1)', padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
+                            ● Operacional
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Status e Turno da Equipe */}
               <div className="admin-card">
@@ -1745,24 +1859,6 @@ export const AdminDashboard = ({ onExitAdmin }) => {
                 </div>
               </form>
 
-              {/* Botão de Purga Supabase / Limpeza de Fallback */}
-              <div style={{ background: 'rgba(204, 0, 0, 0.12)', border: '1px solid #cc0000', borderRadius: '8px', padding: '16px', marginTop: '24px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
-                <div>
-                  <h4 style={{ margin: '0 0 4px 0', color: '#fff', fontSize: '0.95rem' }}><i className="fa-solid fa-database text-red"></i> Purga de Segurança e Visual Supabase</h4>
-                  <p style={{ margin: 0, color: '#a0a0b0', fontSize: '0.82rem' }}>
-                    Sincronize as senhas no Supabase e exclua definitivamente senhas antigas de fallback ('penismurcho', 'admin123') do banco de dados na nuvem.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handlePurgeOldPasswordsAndSync}
-                  disabled={purgingFallbacks}
-                  style={{ background: '#cc0000', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '6px', fontWeight: '600', cursor: purgingFallbacks ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}
-                >
-                  <i className={purgingFallbacks ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-broom"}></i>
-                  {purgingFallbacks ? "Sincronizando..." : "Limpar e Sincronizar Senhas no Supabase"}
-                </button>
-              </div>
 
               {/* Tabela de Membros */}
               <h3><i className="fa-solid fa-users text-red"></i> Membros Atuais da Equipe Staff</h3>

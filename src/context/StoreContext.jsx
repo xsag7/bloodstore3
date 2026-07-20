@@ -35,6 +35,20 @@ const DEFAULT_STATE = {
         manageConfig: true,
         manageTerms: true
       }
+    },
+    {
+      id: "dev-kiover",
+      username: "kiover",
+      password: "kiover123",
+      role: "Desenvolvedor",
+      name: "Desenvolvedor (kiover)",
+      permissions: {
+        manageStaff: true,
+        manageProducts: true,
+        manageOrders: true,
+        manageConfig: true,
+        manageTerms: true
+      }
     }
   ],
   categories: [
@@ -196,6 +210,53 @@ const DEFAULT_STATE = {
   ]
 };
 
+// Helper de blindagem de equipe: garante que o dono xsag e o desenvolvedor kiover sempre existam com suas devidas permissões
+const ensureRequiredStaff = (staffList) => {
+  let list = Array.isArray(staffList) ? [...staffList] : [];
+
+  // 1. Garantir xsag (Dono Supremo)
+  const xsagIdx = list.findIndex(u => u.username?.toLowerCase() === 'xsag');
+  if (xsagIdx === -1) {
+    list.unshift({
+      id: "owner-xsag",
+      username: "xsag",
+      password: "xsag1234",
+      role: "owner",
+      name: "Dono Supremo (xsag)",
+      permissions: { manageStaff: true, manageProducts: true, manageOrders: true, manageConfig: true, manageTerms: true }
+    });
+  } else {
+    list[xsagIdx] = {
+      ...list[xsagIdx],
+      role: "owner",
+      name: list[xsagIdx].name || "Dono Supremo (xsag)",
+      permissions: { manageStaff: true, manageProducts: true, manageOrders: true, manageConfig: true, manageTerms: true }
+    };
+  }
+
+  // 2. Garantir kiover (Desenvolvedor)
+  const kioverIdx = list.findIndex(u => u.username?.toLowerCase() === 'kiover');
+  if (kioverIdx === -1) {
+    list.push({
+      id: "dev-kiover",
+      username: "kiover",
+      password: "kiover123",
+      role: "Desenvolvedor",
+      name: "Desenvolvedor (kiover)",
+      permissions: { manageStaff: true, manageProducts: true, manageOrders: true, manageConfig: true, manageTerms: true }
+    });
+  } else {
+    list[kioverIdx] = {
+      ...list[kioverIdx],
+      role: "Desenvolvedor",
+      name: list[kioverIdx].name || "Desenvolvedor (kiover)",
+      permissions: { manageStaff: true, manageProducts: true, manageOrders: true, manageConfig: true, manageTerms: true }
+    };
+  }
+
+  return list;
+};
+
 const StoreContext = createContext();
 
 export const StoreProvider = ({ children }) => {
@@ -227,9 +288,9 @@ export const StoreProvider = ({ children }) => {
             webhookRejectedUrl: parsed.config?.webhookRejectedUrl?.trim() || DEFAULT_STATE.config.webhookRejectedUrl,
             webhookStaffJoinUrl: parsed.config?.webhookStaffJoinUrl?.trim() || DEFAULT_STATE.config.webhookStaffJoinUrl
           },
-          staffUsers: Array.isArray(parsed.staffUsers) && parsed.staffUsers.length > 0 
+          staffUsers: ensureRequiredStaff(Array.isArray(parsed.staffUsers) && parsed.staffUsers.length > 0 
             ? parsed.staffUsers 
-            : DEFAULT_STATE.staffUsers,
+            : DEFAULT_STATE.staffUsers),
           currentUser: parsed.currentUser || null,
           orders: Array.isArray(parsed.orders) ? parsed.orders : []
         };
@@ -303,9 +364,9 @@ export const StoreProvider = ({ children }) => {
           webhookRejectedUrl: data.config?.webhookRejectedUrl?.trim() || prev.config?.webhookRejectedUrl?.trim() || DEFAULT_STATE.config.webhookRejectedUrl,
           webhookStaffJoinUrl: data.config?.webhookStaffJoinUrl?.trim() || prev.config?.webhookStaffJoinUrl?.trim() || DEFAULT_STATE.config.webhookStaffJoinUrl
         };
-        const mergedStaff = Array.isArray(data.staff_users) && data.staff_users.length > 0
+        const mergedStaff = ensureRequiredStaff(Array.isArray(data.staff_users) && data.staff_users.length > 0
           ? data.staff_users
-          : (prev.staffUsers || DEFAULT_STATE.staffUsers);
+          : (prev.staffUsers || DEFAULT_STATE.staffUsers));
         const mergedOrders = Array.isArray(data.orders) ? data.orders : (prev.orders || []);
         const mergedProducts = Array.isArray(data.products) && data.products.length > 0 ? data.products : prev.products;
         const mergedTerms = Array.isArray(data.terms) && data.terms.length > 0 ? data.terms : prev.terms;
@@ -485,10 +546,7 @@ export const StoreProvider = ({ children }) => {
           products: storeState.products || [],
           terms: storeState.terms || [],
           orders: storeState.orders || [],
-          staff_users: storeState.staffUsers || [],
-          categories: storeState.categories || DEFAULT_STATE.categories,
-          coupons: storeState.coupons || DEFAULT_STATE.coupons,
-          visitsCount: storeState.visitsCount || DEFAULT_STATE.visitsCount,
+          staff_users: ensureRequiredStaff(storeState.staffUsers || []),
           updated_at: new Date().toISOString()
         };
         const { error } = await supabase.from('store_state').upsert(payload);
@@ -524,10 +582,7 @@ export const StoreProvider = ({ children }) => {
         products: targetState.products || [],
         terms: targetState.terms || [],
         orders: targetState.orders || [],
-        staff_users: targetState.staffUsers || [],
-        categories: targetState.categories || DEFAULT_STATE.categories,
-        coupons: targetState.coupons || DEFAULT_STATE.coupons,
-        visitsCount: targetState.visitsCount || DEFAULT_STATE.visitsCount,
+        staff_users: ensureRequiredStaff(targetState.staffUsers || []),
         updated_at: new Date().toISOString()
       };
       const { data, error } = await supabase.from('store_state').upsert(payload).select();
@@ -573,13 +628,13 @@ export const StoreProvider = ({ children }) => {
     setStoreState(prev => {
       nextState = {
         ...prev,
-        staffUsers: newStaffList
+        staffUsers: ensureRequiredStaff(newStaffList)
       };
       storeStateRef.current = nextState;
       return nextState;
     });
     const syncRes = await forceSyncToCloud(nextState);
-    notifyDiscordLogs("Lista de Senhas / Equipe Atualizada no Banco", `As senhas e dados da equipe Staff foram atualizados ou purgados no banco de dados na nuvem por @${staffName}.`, staffName);
+    notifyDiscordLogs("Lista de Equipe Atualizada no Banco", `Os dados da equipe Staff foram atualizados no banco de dados na nuvem por @${staffName}.`, staffName);
     return syncRes;
   };
 
@@ -596,7 +651,7 @@ export const StoreProvider = ({ children }) => {
     setStoreState(prev => {
       nextState = {
         ...prev,
-        staffUsers: [...(prev.staffUsers || DEFAULT_STATE.staffUsers), { ...cleanUser, id }]
+        staffUsers: ensureRequiredStaff([...(prev.staffUsers || DEFAULT_STATE.staffUsers), { ...cleanUser, id }])
       };
       storeStateRef.current = nextState;
       return nextState;
@@ -615,7 +670,7 @@ export const StoreProvider = ({ children }) => {
     setStoreState(prev => {
       nextState = {
         ...prev,
-        staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).map(u => u.id === id ? { ...u, ...cleanFields } : u)
+        staffUsers: ensureRequiredStaff((prev.staffUsers || DEFAULT_STATE.staffUsers).map(u => u.id === id ? { ...u, ...cleanFields } : u))
       };
       storeStateRef.current = nextState;
       return nextState;
@@ -626,12 +681,16 @@ export const StoreProvider = ({ children }) => {
 
   const deleteStaffUser = (id, staffName = "Admin / Staff") => {
     const target = (storeStateRef.current.staffUsers || []).find(u => u.id === id);
+    if (target?.username?.toLowerCase() === 'xsag' || target?.username?.toLowerCase() === 'kiover') {
+      alert("🔒 Os usuários xsag (Dono) e kiover (Desenvolvedor) são protegidos e não podem ser removidos.");
+      return;
+    }
     markLocalUpdate();
     let nextState;
     setStoreState(prev => {
       nextState = {
         ...prev,
-        staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).filter(u => u.id !== id && u.username !== 'xsag')
+        staffUsers: ensureRequiredStaff((prev.staffUsers || DEFAULT_STATE.staffUsers).filter(u => u.id !== id))
       };
       storeStateRef.current = nextState;
       return nextState;
@@ -813,7 +872,7 @@ export const StoreProvider = ({ children }) => {
     setStoreState(prev => {
       nextState = {
         ...prev,
-        staffUsers: (prev.staffUsers || DEFAULT_STATE.staffUsers).map(u => {
+        staffUsers: ensureRequiredStaff((prev.staffUsers || DEFAULT_STATE.staffUsers).map(u => {
           if (u.id === staffId || u.username === staffId) {
             return {
               ...u,
@@ -823,7 +882,7 @@ export const StoreProvider = ({ children }) => {
             };
           }
           return u;
-        })
+        }))
        };
        storeStateRef.current = nextState;
        return nextState;

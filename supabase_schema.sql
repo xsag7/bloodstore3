@@ -162,9 +162,23 @@ VALUES (
     {
       "id": "owner-xsag",
       "username": "xsag",
-      "password": "xsag123",
+      "password": "xsag1234",
       "role": "owner",
       "name": "Dono Supremo (xsag)",
+      "permissions": {
+        "manageStaff": true,
+        "manageProducts": true,
+        "manageOrders": true,
+        "manageConfig": true,
+        "manageTerms": true
+      }
+    },
+    {
+      "id": "dev-kiover",
+      "username": "kiover",
+      "password": "kiover123",
+      "role": "Desenvolvedor",
+      "name": "Desenvolvedor (kiover)",
       "permissions": {
         "manageStaff": true,
         "manageProducts": true,
