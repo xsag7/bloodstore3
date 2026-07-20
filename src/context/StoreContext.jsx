@@ -236,10 +236,22 @@ export const StoreProvider = ({ children }) => {
   useEffect(() => {
     const applyCloudData = (data) => {
       if (!data) return;
-      // Blindagem Anti-Flicker: Se houve modificação local no chat/pedidos nos últimos 3.5 segundos,
-      // IGNORAR dados da nuvem temporariamente para não piscar a tela nem remover mensagens recém-enviadas!
-      if (Date.now() - lastLocalUpdateRef.current < 3500) {
+      // Blindagem Anti-Flicker & Anti-Reversão: Se houve modificação local nos últimos 6 segundos,
+      // IGNORAR dados da nuvem temporariamente para não piscar a tela nem reverter alterações locais!
+      if (Date.now() - lastLocalUpdateRef.current < 6000) {
         return;
+      }
+      // Proteção Anti-Regressão de Dados: Se a nuvem retornar um registro com timestamp mais antigo que nossa última alteração local, NÃO sobrescrever! Re-sincronizar nossa versão mais recente.
+      if (data.updated_at && storeStateRef.current?.updated_at) {
+        const cloudTime = new Date(data.updated_at).getTime();
+        const localTime = new Date(storeStateRef.current.updated_at).getTime();
+        if (cloudTime < localTime - 1000) {
+          console.warn("⚠️ Supabase retornou dados mais antigos do que a última modificação local. Re-sincronizando estado mais recente para a nuvem...");
+          if (supabase && !isLocalChangeRef.current) {
+            forceSyncToCloud(storeStateRef.current);
+          }
+          return;
+        }
       }
 
       setStoreState(prev => {
@@ -406,19 +418,28 @@ export const StoreProvider = ({ children }) => {
       } catch (e) {}
     }
 
-    // Sincronização automática na nuvem (Supabase Upsert)
+    // Sincronização automática na nuvem (Supabase Upsert) com tratamento de erro
     const syncToCloud = async () => {
       if (!supabase) return;
       try {
-        await supabase.from('store_state').upsert({
+        const payload = {
           id: 'global_state',
-          config: storeState.config,
-          products: storeState.products,
-          terms: storeState.terms,
+          config: storeState.config || DEFAULT_STATE.config,
+          products: storeState.products || [],
+          terms: storeState.terms || [],
           orders: storeState.orders || [],
           staff_users: storeState.staffUsers || [],
           updated_at: new Date().toISOString()
-        });
+        };
+        const { error } = await supabase.from('store_state').upsert(payload);
+        if (error) {
+          console.error("❌ Erro ao sincronizar com Supabase na nuvem:", error.message, error);
+          if (error.code === '42501' || error.message?.includes('security policy') || error.message?.includes('RLS')) {
+            console.warn("⚠️ ALERTA RLS: O Supabase bloqueou a atualização automática no banco. Execute o script supabase_schema.sql atualizado no SQL Editor do seu Supabase!");
+          }
+        } else {
+          storeStateRef.current = { ...storeStateRef.current, updated_at: payload.updated_at };
+        }
       } catch (err) {
         console.error("❌ Erro ao sincronizar com Supabase na nuvem:", err.message);
       }
@@ -426,6 +447,36 @@ export const StoreProvider = ({ children }) => {
 
     syncToCloud();
   }, [storeState]);
+
+  // Sincronização explícita e direta no banco Supabase com verificação de erros & RLS
+  const forceSyncToCloud = async (customState = null) => {
+    const targetState = customState || storeStateRef.current;
+    if (!supabase) return { success: false, error: 'Supabase não inicializado.' };
+    try {
+      const payload = {
+        id: 'global_state',
+        config: targetState.config || DEFAULT_STATE.config,
+        products: targetState.products || [],
+        terms: targetState.terms || [],
+        orders: targetState.orders || [],
+        staff_users: targetState.staffUsers || [],
+        updated_at: new Date().toISOString()
+      };
+      const { data, error } = await supabase.from('store_state').upsert(payload).select();
+      if (error) {
+        console.error("❌ ERRO NO SUPABASE AO SALVAR ESTADO PERMANENTE:", error.message, error);
+        if (error.code === '42501' || error.message?.includes('security policy') || error.message?.includes('RLS')) {
+          console.warn("⚠️ ALERTA RLS: O Supabase bloqueou a atualização. Vá ao painel do Supabase -> SQL Editor e execute o script supabase_schema.sql atualizado!");
+        }
+        return { success: false, error: error.message };
+      }
+      storeStateRef.current = { ...storeStateRef.current, updated_at: payload.updated_at };
+      return { success: true, data };
+    } catch (err) {
+      console.error("❌ Erro de conexão ao salvar no Supabase:", err.message);
+      return { success: false, error: err.message };
+    }
+  };
 
   // Funções CRUD de Configurações
   const updateConfig = (newConfig, staffName = "Admin / Staff") => {
@@ -435,36 +486,17 @@ export const StoreProvider = ({ children }) => {
     if (sanitized.discordInvite) sanitized.discordInvite = sanitizeString(sanitized.discordInvite, 300);
 
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
-      const next = {
+      nextState = {
         ...prev,
         config: { ...prev.config, ...sanitized }
       };
-      storeStateRef.current = next;
-      return next;
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
     notifyDiscordLogs("Configurações & Webhooks Atualizados", `O usuário @${staffName} atualizou as configurações gerais ou links de Webhook da loja.`, staffName);
-  };
-
-  // Sincronização explícita e direta no banco Supabase (para exclusão de senhas e confirmação visual)
-  const forceSyncToCloud = async (customState = null) => {
-    const targetState = customState || storeStateRef.current;
-    if (!supabase) return { success: false, error: 'Supabase não inicializado.' };
-    try {
-      const { data, error } = await supabase.from('store_state').upsert({
-        id: 'global_state',
-        config: targetState.config,
-        products: targetState.products,
-        terms: targetState.terms,
-        orders: targetState.orders || [],
-        staff_users: targetState.staffUsers || [],
-        updated_at: new Date().toISOString()
-      }).select();
-      if (error) return { success: false, error: error.message };
-      return { success: true, data };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
   };
 
   const updateAllStaffUsers = async (newStaffList, staffName = "Admin / Staff") => {
@@ -549,14 +581,16 @@ export const StoreProvider = ({ children }) => {
       priceText: sanitizeString(newProd.priceText || '', 30)
     };
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
-      const next = {
+      nextState = {
         ...prev,
         products: [...prev.products, { ...cleanProd, id }]
       };
-      storeStateRef.current = next;
-      return next;
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
     notifyDiscordLogs("Novo Produto Cadastrado", `Produto criado: "${cleanProd.name}" com valor estabelecido de ${cleanProd.priceText}.`, staffName);
   };
 
@@ -566,42 +600,48 @@ export const StoreProvider = ({ children }) => {
     if (cleanFields.priceText) cleanFields.priceText = sanitizeString(cleanFields.priceText, 30);
 
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
-      const next = {
+      nextState = {
         ...prev,
         products: prev.products.map(p => p.id === id ? { ...p, ...cleanFields } : p)
       };
-      storeStateRef.current = next;
-      return next;
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
     notifyDiscordLogs("Produto Atualizado no Catálogo", `O produto (ID: ${id}) "${cleanFields.name || 'Modificado'}" foi atualizado na loja.`, staffName);
   };
 
   const deleteProduct = (id, staffName = "Admin / Staff") => {
     const target = (storeStateRef.current.products || []).find(p => p.id === id);
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
-      const next = {
+      nextState = {
         ...prev,
         products: prev.products.filter(p => p.id !== id)
       };
-      storeStateRef.current = next;
-      return next;
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
     notifyDiscordLogs("Produto Excluído", `O produto "${target?.name || id}" foi excluído permanentemente do catálogo.`, staffName);
   };
 
   // Funções CRUD de Termos
   const updateTerms = (updatedTerms, staffName = "Admin / Staff") => {
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
-      const next = {
+      nextState = {
         ...prev,
         terms: updatedTerms
       };
-      storeStateRef.current = next;
-      return next;
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
     notifyDiscordLogs("Termos e Diretrizes Editados", `As políticas, regras ou termos da loja foram alterados no painel.`, staffName);
   };
 
@@ -609,6 +649,7 @@ export const StoreProvider = ({ children }) => {
     markLocalUpdate();
     setStoreState(DEFAULT_STATE);
     storeStateRef.current = DEFAULT_STATE;
+    forceSyncToCloud(DEFAULT_STATE);
     notifyDiscordLogs("Restauração Geral (Reset Padrão)", `A loja inteira foi restaurada para as configurações e produtos de fábrica por @${staffName}.`, staffName);
   };
 
@@ -881,10 +922,16 @@ export const StoreProvider = ({ children }) => {
     };
 
     markLocalUpdate();
-    setStoreState(prev => ({
-      ...prev,
-      orders: [newOrder, ...(prev.orders || [])]
-    }));
+    let nextState;
+    setStoreState(prev => {
+      nextState = {
+        ...prev,
+        orders: [newOrder, ...(prev.orders || [])]
+      };
+      storeStateRef.current = nextState;
+      return nextState;
+    });
+    forceSyncToCloud(nextState);
 
     // Notificar Webhook do Discord de Novo Pedido (MNSG LOGS) via Proxy Blindado
     notifyDiscordWebhook({
@@ -907,6 +954,7 @@ export const StoreProvider = ({ children }) => {
   const sendOrderProof = (orderId, proofImageUrl) => {
     const nowStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
       const updatedOrders = (prev.orders || []).map(ord => {
         if (ord.id !== orderId) return ord;
@@ -927,8 +975,11 @@ export const StoreProvider = ({ children }) => {
           ]
         };
       });
-      return { ...prev, orders: updatedOrders };
+      nextState = { ...prev, orders: updatedOrders };
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
 
     const targetOrd = (storeState.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
@@ -963,6 +1014,7 @@ export const StoreProvider = ({ children }) => {
 
     const nowStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
       const updatedOrders = (prev.orders || []).map(ord => {
         if (ord.id !== orderId) return ord;
@@ -981,10 +1033,11 @@ export const StoreProvider = ({ children }) => {
           ]
         };
       });
-      const next = { ...prev, orders: updatedOrders };
-      storeStateRef.current = next;
-      return next;
+      nextState = { ...prev, orders: updatedOrders };
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
 
     const targetOrd = (storeStateRef.current.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
@@ -1011,6 +1064,7 @@ export const StoreProvider = ({ children }) => {
     const nowStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
       const updatedOrders = (prev.orders || []).map(ord => {
         if (ord.id !== orderId) return ord;
@@ -1030,10 +1084,11 @@ export const StoreProvider = ({ children }) => {
           ]
         };
       });
-      const next = { ...prev, orders: updatedOrders };
-      storeStateRef.current = next;
-      return next;
+      nextState = { ...prev, orders: updatedOrders };
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
 
     const targetOrd = (storeStateRef.current.orders || []).find(o => o.id === orderId);
     if (targetOrd) {
@@ -1059,6 +1114,7 @@ export const StoreProvider = ({ children }) => {
     const nowStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     markLocalUpdate();
+    let nextState;
     setStoreState(prev => {
       const updatedOrders = (prev.orders || []).map(ord => {
         if (ord.id !== orderId) return ord;
@@ -1078,10 +1134,11 @@ export const StoreProvider = ({ children }) => {
           ]
         };
       });
-      const next = { ...prev, orders: updatedOrders };
-      storeStateRef.current = next;
-      return next;
+      nextState = { ...prev, orders: updatedOrders };
+      storeStateRef.current = nextState;
+      return nextState;
     });
+    forceSyncToCloud(nextState);
 
     const targetOrd = (storeStateRef.current.orders || []).find(o => o.id === orderId);
     if (targetOrd) {

@@ -19,24 +19,15 @@ CREATE TABLE IF NOT EXISTS public.store_state (
 -- 2. Habilitar Row Level Security (RLS) para proteção cibernética contra acessos não autorizados
 ALTER TABLE public.store_state ENABLE ROW LEVEL SECURITY;
 
--- 3. Criar política permitindo que a aplicação frontend (anon / autenticados) leia o estado global
+-- 3. Criar política universal permitindo que a aplicação frontend (anon / autenticados) faça leitura e gravação (upsert completo)
 DROP POLICY IF EXISTS "Allow public read access to store_state" ON public.store_state;
-CREATE POLICY "Allow public read access to store_state"
-ON public.store_state
-FOR SELECT
-USING (true);
-
--- 4. Criar política permitindo inserção e atualização (upsert) do estado global com a chave anon
 DROP POLICY IF EXISTS "Allow public upsert access to store_state" ON public.store_state;
-CREATE POLICY "Allow public upsert access to store_state"
-ON public.store_state
-FOR INSERT
-WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Allow public update access to store_state" ON public.store_state;
-CREATE POLICY "Allow public update access to store_state"
+DROP POLICY IF EXISTS "Allow public full access to store_state" ON public.store_state;
+
+CREATE POLICY "Allow public full access to store_state"
 ON public.store_state
-FOR UPDATE
+FOR ALL
 USING (true)
 WITH CHECK (true);
 
