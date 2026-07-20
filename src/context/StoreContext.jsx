@@ -25,7 +25,7 @@ const DEFAULT_STATE = {
     {
       id: "owner-xsag",
       username: "xsag",
-      password: "xsag123",
+      password: "xsag1234",
       role: "owner",
       name: "Dono Supremo (xsag)",
       permissions: {
